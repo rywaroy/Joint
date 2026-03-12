@@ -10,6 +10,7 @@ import org.joint.modules.system.user.dto.CreateUserDto;
 import org.joint.modules.system.user.dto.QueryUserDto;
 import org.joint.modules.system.user.entity.User;
 import org.joint.modules.system.user.mapper.UserMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 public class UserService {
 
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public User findById(String id) {
         User user = userMapper.selectById(id);
@@ -58,7 +60,7 @@ public class UserService {
 
         User user = new User();
         user.setUsername(dto.getUsername());
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setNickName(dto.getNickName());
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
