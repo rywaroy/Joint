@@ -4,11 +4,13 @@ import org.joint.common.security.CurrentUserArgumentResolver;
 import org.joint.common.security.JwtAuthenticationFilter;
 import org.joint.common.security.JwtTokenProvider;
 import org.joint.common.security.SecurityExceptionHandlers;
+import org.joint.common.security.TokenBlacklistService;
 import org.joint.config.JwtProperties;
 import org.joint.config.SecurityConfig;
 import org.joint.config.WebMvcConfig;
 import org.joint.modules.system.dept.mapper.DeptMapper;
 import org.joint.modules.system.menu.mapper.MenuMapper;
+import org.joint.modules.system.operlog.mapper.OperLogMapper;
 import org.joint.modules.system.post.mapper.PostMapper;
 import org.joint.modules.system.post.mapper.UserPostMapper;
 import org.joint.modules.system.role.mapper.RoleMapper;
@@ -21,6 +23,7 @@ import org.joint.modules.system.user.mapper.UserRoleMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -58,6 +61,15 @@ class CurrentUserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private TokenBlacklistService tokenBlacklistService;
+
+    @MockitoBean
+    private OperLogMapper operLogMapper;
+
+    @MockitoBean
+    private CacheManager cacheManager;
 
     @MockitoBean
     private UserMapper userMapper;

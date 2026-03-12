@@ -1,8 +1,10 @@
 package org.joint.modules.system.menu.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "创建菜单请求")
 public class CreateMenuDto {
 
     private String parentId;

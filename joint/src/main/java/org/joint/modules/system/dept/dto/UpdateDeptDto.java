@@ -1,8 +1,10 @@
 package org.joint.modules.system.dept.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "更新部门请求")
 public class UpdateDeptDto {
 
     private String name;

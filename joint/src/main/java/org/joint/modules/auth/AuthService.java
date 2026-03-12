@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.joint.common.exception.BusinessException;
 import org.joint.common.security.JwtTokenProvider;
+import org.joint.common.security.TokenBlacklistService;
 import org.joint.modules.auth.dto.LoginDto;
 import org.joint.modules.auth.vo.LoginVo;
 import org.joint.modules.system.role.entity.Role;
@@ -28,6 +29,7 @@ public class AuthService {
     private final RoleMapper roleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public LoginVo login(LoginDto dto) {
         User user = findUserForLogin(dto.getUsername());
@@ -49,6 +51,10 @@ public class AuthService {
                 .realName(user.getNickName())
                 .roles(roleCodes)
                 .build();
+    }
+
+    public void logout(String token) {
+        tokenBlacklistService.blacklist(token);
     }
 
     private User findUserForLogin(String username) {

@@ -1,12 +1,19 @@
 package org.joint.common.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "统一响应")
 public class Result<T> {
 
+    @Schema(description = "业务状态码", example = "0")
     private Integer code;
+
+    @Schema(description = "响应消息", example = "请求成功")
     private String message;
+
+    @Schema(description = "响应数据")
     private T data;
 
     private Result() {}

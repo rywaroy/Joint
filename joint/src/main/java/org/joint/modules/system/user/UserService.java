@@ -22,6 +22,9 @@ import org.joint.modules.system.user.mapper.UserRoleMapper;
 import org.joint.modules.system.user.vo.UserDetailVo;
 import org.joint.modules.system.user.vo.UserVo;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -42,6 +45,7 @@ public class UserService {
     private final DeptMapper deptMapper;
     private final PasswordEncoder passwordEncoder;
 
+    @Cacheable(value = "user", key = "#id")
     public User findById(String id) {
         return getExistingUser(id);
     }
@@ -59,6 +63,7 @@ public class UserService {
         return response;
     }
 
+    @Cacheable(value = "user-detail", key = "#id")
     public UserDetailVo findDetailById(String id) {
         return toDetailVo(getExistingUser(id));
     }
@@ -101,6 +106,10 @@ public class UserService {
         return userMapper.selectById(user.getId());
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "user-detail", key = "#id")
+    })
     public UserVo update(String id, UpdateUserDto dto) {
         User user = getExistingUser(id);
 
@@ -137,6 +146,10 @@ public class UserService {
         return toVo(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "user-detail", key = "#id")
+    })
     public void delete(String id) {
         User user = getExistingUser(id);
         if ("admin".equals(user.getUsername())) {
@@ -148,12 +161,20 @@ public class UserService {
         userMapper.deleteById(id);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "user-detail", key = "#id")
+    })
     public void updateStatus(String id, Integer status) {
         User user = getExistingUser(id);
         user.setStatus(status);
         userMapper.updateById(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "user-detail", key = "#id")
+    })
     public void resetPassword(String id, String newPassword) {
         User user = getExistingUser(id);
         user.setPassword(passwordEncoder.encode(newPassword));

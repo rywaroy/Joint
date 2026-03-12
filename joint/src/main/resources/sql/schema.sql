@@ -107,3 +107,26 @@ CREATE TABLE IF NOT EXISTS sys_user_post (
     post_id VARCHAR(32) NOT NULL COMMENT '岗位ID',
     UNIQUE KEY uk_user_post (user_id, post_id)
 ) COMMENT '用户岗位关联表';
+
+-- 操作日志表
+CREATE TABLE IF NOT EXISTS sys_oper_log (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    module VARCHAR(100) COMMENT '模块名称',
+    business_type VARCHAR(50) COMMENT '业务类型',
+    description VARCHAR(255) COMMENT '操作描述',
+    method VARCHAR(255) COMMENT '方法签名',
+    request_method VARCHAR(20) COMMENT '请求方法',
+    request_url VARCHAR(255) COMMENT '请求地址',
+    request_params TEXT COMMENT '请求参数',
+    response_result TEXT COMMENT '响应结果',
+    status TINYINT DEFAULT 0 COMMENT '状态 0-成功 1-失败',
+    error_msg TEXT COMMENT '错误信息',
+    operator_id VARCHAR(32) COMMENT '操作人ID',
+    operator_name VARCHAR(50) COMMENT '操作人名称',
+    operator_ip VARCHAR(64) COMMENT '操作IP',
+    cost_time BIGINT COMMENT '耗时(毫秒)',
+    operate_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    INDEX idx_operate_time (operate_time),
+    INDEX idx_module (module),
+    INDEX idx_status (status)
+) COMMENT '操作日志表';

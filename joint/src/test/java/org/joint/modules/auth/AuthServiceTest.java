@@ -2,6 +2,7 @@ package org.joint.modules.auth;
 
 import org.joint.common.exception.BusinessException;
 import org.joint.common.security.JwtTokenProvider;
+import org.joint.common.security.TokenBlacklistService;
 import org.joint.modules.auth.dto.LoginDto;
 import org.joint.modules.auth.vo.LoginVo;
 import org.joint.modules.system.role.entity.Role;
@@ -32,6 +33,7 @@ class AuthServiceTest {
     private RoleMapper roleMapper;
     private PasswordEncoder passwordEncoder;
     private JwtTokenProvider jwtTokenProvider;
+    private TokenBlacklistService tokenBlacklistService;
     private AuthService authService;
 
     @BeforeEach
@@ -41,7 +43,15 @@ class AuthServiceTest {
         roleMapper = mock(RoleMapper.class);
         passwordEncoder = mock(PasswordEncoder.class);
         jwtTokenProvider = mock(JwtTokenProvider.class);
-        authService = new AuthService(userMapper, userRoleMapper, roleMapper, passwordEncoder, jwtTokenProvider);
+        tokenBlacklistService = mock(TokenBlacklistService.class);
+        authService = new AuthService(
+                userMapper,
+                userRoleMapper,
+                roleMapper,
+                passwordEncoder,
+                jwtTokenProvider,
+                tokenBlacklistService
+        );
     }
 
     @Test
@@ -119,5 +129,12 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(dto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("用户已被禁用");
+    }
+
+    @Test
+    void logoutDelegatesToBlacklistService() {
+        authService.logout("jwt-token");
+
+        verify(tokenBlacklistService).blacklist("jwt-token");
     }
 }

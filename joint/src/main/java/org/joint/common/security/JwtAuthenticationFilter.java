@@ -20,6 +20,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenBlacklistService tokenBlacklistService;
     private final SecurityContextRepository securityContextRepository;
 
     @Override
@@ -29,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorization = request.getHeader("Authorization");
         if (authorization != null && authorization.startsWith("Bearer ")) {
             String token = authorization.substring(7);
-            if (jwtTokenProvider.validateToken(token)) {
+            if (!tokenBlacklistService.isBlacklisted(token) && jwtTokenProvider.validateToken(token)) {
                 LoginUser loginUser = new LoginUser(
                         jwtTokenProvider.getUserIdFromToken(token),
                         jwtTokenProvider.getUsernameFromToken(token),
