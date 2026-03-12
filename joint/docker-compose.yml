@@ -1,0 +1,71 @@
+services:
+  joint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: joint-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/joint?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      FILE_BASE_URL: ${FILE_BASE_URL}
+      JAVA_OPTS: -Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+    ports:
+      - "8080:8080"
+    networks:
+      - joint-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: joint-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: joint
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - joint-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: joint-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - joint-network
+    restart: unless-stopped
+
+networks:
+  joint-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
