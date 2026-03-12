@@ -7,7 +7,12 @@ import org.joint.common.annotation.RequirePermission;
 import org.joint.common.response.PageResult;
 import org.joint.modules.system.user.dto.CreateUserDto;
 import org.joint.modules.system.user.dto.QueryUserDto;
+import org.joint.modules.system.user.dto.ResetPasswordDto;
+import org.joint.modules.system.user.dto.UpdateUserDto;
+import org.joint.modules.system.user.dto.UpdateUserStatusDto;
 import org.joint.modules.system.user.entity.User;
+import org.joint.modules.system.user.vo.UserDetailVo;
+import org.joint.modules.system.user.vo.UserVo;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,14 +24,14 @@ public class UserController {
 
     @GetMapping("/list")
     @RequirePermission("system:user:list")
-    public PageResult<User> list(QueryUserDto query) {
-        return PageResult.of(userService.findAll(query));
+    public PageResult<UserVo> list(QueryUserDto query) {
+        return userService.findPage(query);
     }
 
     @GetMapping("/{id}")
     @RequirePermission("system:user:query")
-    public User getById(@PathVariable String id) {
-        return userService.findById(id);
+    public UserDetailVo getById(@PathVariable String id) {
+        return userService.findDetailById(id);
     }
 
     @GetMapping("/profile")
@@ -36,14 +41,26 @@ public class UserController {
 
     @PostMapping
     @RequirePermission("system:user:add")
-    public User create(@Valid @RequestBody CreateUserDto dto) {
+    public UserVo create(@Valid @RequestBody CreateUserDto dto) {
         return userService.create(dto);
     }
 
-    @PutMapping
-    @RequirePermission("system:user:update")
-    public User update(@RequestBody User user) {
-        return userService.update(user);
+    @PutMapping("/{id}")
+    @RequirePermission("system:user:edit")
+    public UserVo update(@PathVariable String id, @Valid @RequestBody UpdateUserDto dto) {
+        return userService.update(id, dto);
+    }
+
+    @PutMapping("/{id}/status")
+    @RequirePermission("system:user:edit")
+    public void updateStatus(@PathVariable String id, @Valid @RequestBody UpdateUserStatusDto dto) {
+        userService.updateStatus(id, dto.getStatus());
+    }
+
+    @PutMapping("/{id}/reset-password")
+    @RequirePermission("system:user:edit")
+    public void resetPassword(@PathVariable String id, @Valid @RequestBody ResetPasswordDto dto) {
+        userService.resetPassword(id, dto.getPassword());
     }
 
     @DeleteMapping("/{id}")

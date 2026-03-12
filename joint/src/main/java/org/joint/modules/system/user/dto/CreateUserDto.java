@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.joint.common.annotation.Phone;
 
+import java.util.List;
+
 @Data
 public class CreateUserDto {
 
@@ -28,4 +30,12 @@ public class CreateUserDto {
     @Min(value = 0, message = "状态值无效")
     @Max(value = 1, message = "状态值无效")
     private Integer status;
+
+    private String deptId;
+
+    private String remark;
+
+    private List<String> roleIds;
+
+    private List<String> postIds;
 }

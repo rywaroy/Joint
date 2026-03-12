@@ -9,6 +9,8 @@ import org.joint.config.SecurityConfig;
 import org.joint.config.WebMvcConfig;
 import org.joint.modules.system.dept.mapper.DeptMapper;
 import org.joint.modules.system.menu.mapper.MenuMapper;
+import org.joint.modules.system.post.mapper.PostMapper;
+import org.joint.modules.system.post.mapper.UserPostMapper;
 import org.joint.modules.system.role.mapper.RoleMapper;
 import org.joint.modules.system.role.mapper.RoleMenuMapper;
 import org.joint.modules.system.user.UserController;
@@ -74,6 +76,12 @@ class CurrentUserControllerTest {
 
     @MockitoBean
     private DeptMapper deptMapper;
+
+    @MockitoBean
+    private PostMapper postMapper;
+
+    @MockitoBean
+    private UserPostMapper userPostMapper;
 
     @Test
     void profileReturnsCurrentUser() throws Exception {

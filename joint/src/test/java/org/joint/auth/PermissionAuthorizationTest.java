@@ -1,6 +1,6 @@
 package org.joint.auth;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.joint.common.response.PageResult;
 import org.joint.common.security.JwtAuthenticationFilter;
 import org.joint.common.security.JwtTokenProvider;
 import org.joint.common.security.PermissionAspect;
@@ -10,13 +10,15 @@ import org.joint.config.JwtProperties;
 import org.joint.config.SecurityConfig;
 import org.joint.modules.system.dept.mapper.DeptMapper;
 import org.joint.modules.system.menu.mapper.MenuMapper;
+import org.joint.modules.system.post.mapper.PostMapper;
+import org.joint.modules.system.post.mapper.UserPostMapper;
 import org.joint.modules.system.role.mapper.RoleMapper;
 import org.joint.modules.system.role.mapper.RoleMenuMapper;
 import org.joint.modules.system.user.UserController;
 import org.joint.modules.system.user.UserService;
-import org.joint.modules.system.user.entity.User;
 import org.joint.modules.system.user.mapper.UserMapper;
 import org.joint.modules.system.user.mapper.UserRoleMapper;
+import org.joint.modules.system.user.vo.UserVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
@@ -82,12 +84,20 @@ class PermissionAuthorizationTest {
     @MockitoBean
     private DeptMapper deptMapper;
 
+    @MockitoBean
+    private PostMapper postMapper;
+
+    @MockitoBean
+    private UserPostMapper userPostMapper;
+
     @Test
     void userWithRequiredPermissionCanAccessList() throws Exception {
-        Page<User> page = new Page<>(1, 10);
-        page.setRecords(List.of());
-        page.setTotal(0);
-        when(userService.findAll(any())).thenReturn(page);
+        PageResult<UserVo> page = new PageResult<>();
+        page.setData(List.of());
+        page.setTotal(0L);
+        page.setPage(1L);
+        page.setSize(10L);
+        when(userService.findPage(any())).thenReturn(page);
         when(permissionService.getUserPermissions("u-1")).thenReturn(Set.of("system:user:list"));
 
         String token = jwtTokenProvider.generateToken("u-1", "editor", Map.of("roles", List.of("editor")));
@@ -112,10 +122,12 @@ class PermissionAuthorizationTest {
 
     @Test
     void adminRoleBypassesPermissionCheck() throws Exception {
-        Page<User> page = new Page<>(1, 10);
-        page.setRecords(List.of());
-        page.setTotal(0);
-        when(userService.findAll(any())).thenReturn(page);
+        PageResult<UserVo> page = new PageResult<>();
+        page.setData(List.of());
+        page.setTotal(0L);
+        page.setPage(1L);
+        page.setSize(10L);
+        when(userService.findPage(any())).thenReturn(page);
 
         String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
 

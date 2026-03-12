@@ -86,3 +86,24 @@ CREATE TABLE IF NOT EXISTS sys_dept (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) COMMENT '部门表';
+
+-- 岗位表
+CREATE TABLE IF NOT EXISTS sys_post (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    post_code VARCHAR(50) NOT NULL UNIQUE COMMENT '岗位编码',
+    post_name VARCHAR(50) NOT NULL COMMENT '岗位名称',
+    post_sort INT DEFAULT 0 COMMENT '岗位排序',
+    status TINYINT DEFAULT 0 COMMENT '状态 0-正常 1-禁用',
+    remark VARCHAR(500) COMMENT '备注',
+    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '岗位表';
+
+-- 用户-岗位关联表
+CREATE TABLE IF NOT EXISTS sys_user_post (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    user_id VARCHAR(32) NOT NULL COMMENT '用户ID',
+    post_id VARCHAR(32) NOT NULL COMMENT '岗位ID',
+    UNIQUE KEY uk_user_post (user_id, post_id)
+) COMMENT '用户岗位关联表';
