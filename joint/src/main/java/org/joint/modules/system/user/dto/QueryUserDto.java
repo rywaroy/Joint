@@ -7,5 +7,7 @@ public class QueryUserDto {
     private Integer page = 1;
     private Integer size = 10;
     private String username;
+    private String nickName;
     private Integer status;
+    private String deptId;
 }

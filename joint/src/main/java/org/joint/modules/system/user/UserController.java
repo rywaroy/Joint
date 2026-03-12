@@ -2,12 +2,11 @@ package org.joint.modules.system.user;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.joint.common.response.PageResult;
 import org.joint.modules.system.user.dto.CreateUserDto;
 import org.joint.modules.system.user.dto.QueryUserDto;
+import org.joint.modules.system.user.entity.User;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/system/user")
@@ -17,18 +16,23 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/list")
-    public List<Map<String, Object>> list(QueryUserDto query) {
-        return userService.findAll(query.getPage(), query.getSize());
+    public PageResult<User> list(QueryUserDto query) {
+        return PageResult.of(userService.findAll(query));
     }
 
     @GetMapping("/{id}")
-    public Map<String, Object> getById(@PathVariable String id) {
+    public User getById(@PathVariable String id) {
         return userService.findById(id);
     }
 
     @PostMapping
-    public Map<String, Object> create(@Valid @RequestBody CreateUserDto dto) {
+    public User create(@Valid @RequestBody CreateUserDto dto) {
         return userService.create(dto);
+    }
+
+    @PutMapping
+    public User update(@RequestBody User user) {
+        return userService.update(user);
     }
 
     @DeleteMapping("/{id}")
