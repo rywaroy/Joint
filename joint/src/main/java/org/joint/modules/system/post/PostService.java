@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.joint.common.exception.BusinessException;
-import org.joint.common.response.PageResult;
 import org.joint.modules.system.post.dto.CreatePostDto;
 import org.joint.modules.system.post.dto.QueryPostDto;
 import org.joint.modules.system.post.dto.UpdatePostDto;
@@ -16,7 +15,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,15 +25,17 @@ public class PostService {
 
     private final PostMapper postMapper;
 
-    public PageResult<PostVo> findPage(QueryPostDto query) {
-        Page<Post> page = new Page<>(query.getPage(), query.getSize());
+    public Map<String, Object> findPage(QueryPostDto query) {
+        Page<Post> page = new Page<>(query.getPage(), query.getPageSize());
         IPage<Post> result = postMapper.selectPage(page, new LambdaQueryWrapper<Post>()
                 .like(StringUtils.hasText(query.getPostCode()), Post::getPostCode, query.getPostCode())
                 .like(StringUtils.hasText(query.getPostName()), Post::getPostName, query.getPostName())
                 .eq(query.getStatus() != null, Post::getStatus, query.getStatus())
-                .orderByAsc(Post::getPostSort)
-                .orderByDesc(Post::getCreatedAt));
-        return PageResult.of(result, this::toVo);
+                .orderByAsc(Post::getPostSort));
+        return Map.of(
+                "list", result.getRecords().stream().map(this::toVo).toList(),
+                "total", result.getTotal()
+        );
     }
 
     public PostVo findById(String id) {
@@ -49,6 +52,9 @@ public class PostService {
         }
         if (post.getStatus() == null) {
             post.setStatus(0);
+        }
+        if (post.getRemark() == null) {
+            post.setRemark("");
         }
         postMapper.insert(post);
         return toVo(post);
@@ -77,16 +83,16 @@ public class PostService {
         return toVo(post);
     }
 
-    public void delete(String id) {
+    public Map<String, String> delete(String id) {
         getExistingPost(id);
         postMapper.deleteById(id);
+        return Map.of("id", id);
     }
 
     public List<PostVo> findAllEnabled() {
         return postMapper.selectList(new LambdaQueryWrapper<Post>()
                         .eq(Post::getStatus, 0)
-                        .orderByAsc(Post::getPostSort)
-                        .orderByDesc(Post::getCreatedAt))
+                        .orderByAsc(Post::getPostSort))
                 .stream()
                 .map(this::toVo)
                 .toList();
@@ -112,7 +118,20 @@ public class PostService {
 
     private PostVo toVo(Post post) {
         PostVo vo = new PostVo();
-        BeanUtils.copyProperties(post, vo);
+        vo.setId(post.getId());
+        vo.setPostCode(post.getPostCode());
+        vo.setPostName(post.getPostName());
+        vo.setPostSort(post.getPostSort());
+        vo.setStatus(post.getStatus());
+        vo.setRemark(post.getRemark() == null ? "" : post.getRemark());
+        vo.setCreateTime(formatDateTime(post.getCreatedAt()));
         return vo;
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return dateTime.toString();
     }
 }

@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.joint.common.annotation.Log;
 import org.joint.common.annotation.RequirePermission;
 import org.joint.common.enums.BusinessType;
-import org.joint.common.response.PageResult;
 import org.joint.modules.system.post.dto.CreatePostDto;
 import org.joint.modules.system.post.dto.QueryPostDto;
 import org.joint.modules.system.post.dto.UpdatePostDto;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/system/post")
@@ -35,7 +35,7 @@ public class PostController {
     @GetMapping("/list")
     @RequirePermission("system:post:list")
     @Operation(summary = "分页查询岗位")
-    public PageResult<PostVo> list(@ParameterObject QueryPostDto query) {
+    public Map<String, Object> list(@Valid @ParameterObject QueryPostDto query) {
         return postService.findPage(query);
     }
 
@@ -72,7 +72,7 @@ public class PostController {
     @RequirePermission("system:post:delete")
     @Log(module = "岗位管理", type = BusinessType.DELETE, description = "删除岗位")
     @Operation(summary = "删除岗位")
-    public void delete(@PathVariable String id) {
-        postService.delete(id);
+    public Map<String, String> delete(@PathVariable String id) {
+        return postService.delete(id);
     }
 }

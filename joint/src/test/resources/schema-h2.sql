@@ -78,24 +78,23 @@ CREATE TABLE IF NOT EXISTS sys_dept (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS sys_post (
-    id VARCHAR(32) PRIMARY KEY,
-    post_code VARCHAR(50) NOT NULL,
-    post_name VARCHAR(50) NOT NULL,
-    post_sort INT DEFAULT 0,
+CREATE TABLE IF NOT EXISTS posts (
+    id VARCHAR(36) PRIMARY KEY,
+    postCode VARCHAR(50) NOT NULL,
+    postName VARCHAR(100) NOT NULL,
+    postSort INT DEFAULT 0,
     status TINYINT DEFAULT 0,
     remark VARCHAR(500),
-    deleted TINYINT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_sys_post_code UNIQUE (post_code)
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_posts_post_code UNIQUE (postCode)
 );
 
-CREATE TABLE IF NOT EXISTS sys_user_post (
-    id VARCHAR(32) PRIMARY KEY,
-    user_id VARCHAR(32) NOT NULL,
-    post_id VARCHAR(32) NOT NULL,
-    CONSTRAINT uk_sys_user_post UNIQUE (user_id, post_id)
+CREATE TABLE IF NOT EXISTS user_posts (
+    userId VARCHAR(36) NOT NULL,
+    postId VARCHAR(36) NOT NULL,
+    assignedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_user_posts PRIMARY KEY (userId, postId)
 );
 
 CREATE TABLE IF NOT EXISTS sys_oper_log (
