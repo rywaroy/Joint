@@ -1,6 +1,7 @@
 package org.joint.modules.system.operlog.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -8,25 +9,52 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_oper_log")
+@TableName("oper_logs")
 public class OperLog {
 
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
-    private String module;
-    private String businessType;
-    private String description;
+    @TableField("title")
+    private String title;
+
+    @TableField("businessType")
+    private Integer businessType;
+
     private String method;
+
+    @TableField("requestMethod")
     private String requestMethod;
-    private String requestUrl;
-    private String requestParams;
-    private String responseResult;
+
+    @TableField("operName")
+    private String operName;
+
+    @TableField("deptName")
+    private String deptName;
+
+    @TableField("operUrl")
+    private String operUrl;
+
+    @TableField("operIp")
+    private String operIp;
+
+    @TableField("operLocation")
+    private String operLocation;
+
+    @TableField("operParam")
+    private String operParam;
+
+    @TableField("jsonResult")
+    private String jsonResult;
+
     private Integer status;
+
+    @TableField("errorMsg")
     private String errorMsg;
-    private String operatorId;
-    private String operatorName;
-    private String operatorIp;
+
+    @TableField("costTime")
     private Long costTime;
-    private LocalDateTime operateTime;
+
+    @TableField("operTime")
+    private LocalDateTime operTime;
 }

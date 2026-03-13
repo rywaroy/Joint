@@ -18,4 +18,8 @@ public @interface Log {
     BusinessType type() default BusinessType.OTHER;
 
     String description() default "";
+
+    boolean saveRequestData() default true;
+
+    boolean saveResponseData() default true;
 }

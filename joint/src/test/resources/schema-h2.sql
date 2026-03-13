@@ -97,21 +97,21 @@ CREATE TABLE IF NOT EXISTS user_posts (
     CONSTRAINT pk_user_posts PRIMARY KEY (userId, postId)
 );
 
-CREATE TABLE IF NOT EXISTS sys_oper_log (
-    id VARCHAR(32) PRIMARY KEY,
-    module VARCHAR(100),
-    business_type VARCHAR(50),
-    description VARCHAR(255),
+CREATE TABLE IF NOT EXISTS oper_logs (
+    id VARCHAR(36) PRIMARY KEY,
+    title VARCHAR(100),
+    businessType TINYINT DEFAULT 0,
     method VARCHAR(255),
-    request_method VARCHAR(20),
-    request_url VARCHAR(255),
-    request_params CLOB,
-    response_result CLOB,
+    requestMethod VARCHAR(20),
+    operName VARCHAR(50),
+    deptName VARCHAR(100),
+    operUrl VARCHAR(255),
+    operIp VARCHAR(64),
+    operLocation VARCHAR(200),
+    operParam CLOB,
+    jsonResult CLOB,
     status TINYINT DEFAULT 0,
-    error_msg CLOB,
-    operator_id VARCHAR(32),
-    operator_name VARCHAR(50),
-    operator_ip VARCHAR(64),
-    cost_time BIGINT,
-    operate_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    errorMsg CLOB,
+    costTime BIGINT,
+    operTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -122,26 +122,28 @@ CREATE TABLE IF NOT EXISTS user_posts (
 ) COMMENT '用户岗位关联表';
 
 -- 操作日志表
-CREATE TABLE IF NOT EXISTS sys_oper_log (
-    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
-    module VARCHAR(100) COMMENT '模块名称',
-    business_type VARCHAR(50) COMMENT '业务类型',
-    description VARCHAR(255) COMMENT '操作描述',
+CREATE TABLE IF NOT EXISTS oper_logs (
+    id VARCHAR(36) PRIMARY KEY COMMENT '主键ID',
+    title VARCHAR(100) COMMENT '日志标题',
+    businessType TINYINT DEFAULT 0 COMMENT '业务类型',
     method VARCHAR(255) COMMENT '方法签名',
-    request_method VARCHAR(20) COMMENT '请求方法',
-    request_url VARCHAR(255) COMMENT '请求地址',
-    request_params TEXT COMMENT '请求参数',
-    response_result TEXT COMMENT '响应结果',
+    requestMethod VARCHAR(20) COMMENT '请求方法',
+    operName VARCHAR(50) COMMENT '操作人名称',
+    deptName VARCHAR(100) COMMENT '部门名称',
+    operUrl VARCHAR(255) COMMENT '请求地址',
+    operIp VARCHAR(64) COMMENT '操作IP',
+    operLocation VARCHAR(200) COMMENT '操作地点',
+    operParam TEXT COMMENT '请求参数',
+    jsonResult TEXT COMMENT '响应结果',
     status TINYINT DEFAULT 0 COMMENT '状态 0-成功 1-失败',
-    error_msg TEXT COMMENT '错误信息',
-    operator_id VARCHAR(32) COMMENT '操作人ID',
-    operator_name VARCHAR(50) COMMENT '操作人名称',
-    operator_ip VARCHAR(64) COMMENT '操作IP',
-    cost_time BIGINT COMMENT '耗时(毫秒)',
-    operate_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
-    INDEX idx_operate_time (operate_time),
-    INDEX idx_module (module),
-    INDEX idx_status (status)
+    errorMsg TEXT COMMENT '错误信息',
+    costTime BIGINT COMMENT '耗时(毫秒)',
+    operTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT '操作时间',
+    INDEX idx_oper_logs_time (operTime),
+    INDEX idx_oper_logs_title (title),
+    INDEX idx_oper_logs_oper_name (operName),
+    INDEX idx_oper_logs_business_type (businessType),
+    INDEX idx_oper_logs_status (status)
 ) COMMENT '操作日志表';
 
 -- 默认基础数据

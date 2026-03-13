@@ -51,17 +51,22 @@ class LogAspectTest {
 
         ArgumentCaptor<OperLog> captor = ArgumentCaptor.forClass(OperLog.class);
         verify(operLogMapper).insert(captor.capture());
-        assertThat(captor.getValue().getModule()).isEqualTo("用户管理");
-        assertThat(captor.getValue().getBusinessType()).isEqualTo(BusinessType.INSERT.name());
+        assertThat(captor.getValue().getTitle()).isEqualTo("用户管理");
+        assertThat(captor.getValue().getBusinessType()).isEqualTo(BusinessType.INSERT.getCode());
         assertThat(captor.getValue().getStatus()).isEqualTo(0);
-        assertThat(captor.getValue().getOperatorName()).isEqualTo("admin");
-        assertThat(captor.getValue().getRequestUrl()).isEqualTo("/system/user");
+        assertThat(captor.getValue().getOperName()).isEqualTo("admin");
+        assertThat(captor.getValue().getOperUrl()).isEqualTo("/system/user");
+        assertThat(captor.getValue().getOperParam()).contains("alice");
     }
 
     @Test
     void annotatedMethodCreatesFailureLog() {
         MockHttpServletRequest request = new MockHttpServletRequest("DELETE", "/system/user/u-1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                new LoginUser("u-1", "admin", java.util.List.of("admin")),
+                "token"
+        ));
 
         SampleService target = new SampleService();
         AspectJProxyFactory proxyFactory = new AspectJProxyFactory(target);
@@ -74,10 +79,34 @@ class LogAspectTest {
 
         ArgumentCaptor<OperLog> captor = ArgumentCaptor.forClass(OperLog.class);
         verify(operLogMapper).insert(captor.capture());
-        assertThat(captor.getValue().getBusinessType()).isEqualTo(BusinessType.DELETE.name());
+        assertThat(captor.getValue().getBusinessType()).isEqualTo(BusinessType.DELETE.getCode());
         assertThat(captor.getValue().getStatus()).isEqualTo(1);
         assertThat(captor.getValue().getErrorMsg()).contains("boom");
         assertThat(captor.getValue().getRequestMethod()).isEqualTo("DELETE");
+    }
+
+    @Test
+    void annotatedMethodSanitizesSensitiveRequestFields() {
+        MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/user/change-password");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                new LoginUser("u-1", "admin", java.util.List.of("admin")),
+                "token"
+        ));
+
+        SampleService target = new SampleService();
+        AspectJProxyFactory proxyFactory = new AspectJProxyFactory(target);
+        proxyFactory.addAspect(logAspect);
+        SampleService proxy = proxyFactory.getProxy();
+
+        proxy.changePassword(new ChangePasswordCommand("old-secret", "new-secret", "token-value"));
+
+        ArgumentCaptor<OperLog> captor = ArgumentCaptor.forClass(OperLog.class);
+        verify(operLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getOperParam()).doesNotContain("old-secret");
+        assertThat(captor.getValue().getOperParam()).doesNotContain("new-secret");
+        assertThat(captor.getValue().getOperParam()).doesNotContain("token-value");
+        assertThat(captor.getValue().getOperParam()).contains("******");
     }
 
     static class SampleService {
@@ -91,5 +120,13 @@ class LogAspectTest {
         public void delete() {
             throw new IllegalStateException("boom");
         }
+
+        @Log(module = "用户管理", type = BusinessType.UPDATE, description = "修改密码")
+        public String changePassword(ChangePasswordCommand command) {
+            return "ok";
+        }
+    }
+
+    record ChangePasswordCommand(String oldPassword, String newPassword, String token) {
     }
 }
