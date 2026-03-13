@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.joint.common.annotation.Log;
 import org.joint.common.annotation.RequirePermission;
 import org.joint.common.enums.BusinessType;
-import org.joint.common.response.PageResult;
 import org.joint.modules.system.role.dto.CreateRoleDto;
 import org.joint.modules.system.role.dto.QueryRoleDto;
 import org.joint.modules.system.role.dto.UpdateRoleDto;
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -35,7 +35,7 @@ public class RoleController {
     @GetMapping("/list")
     @RequirePermission("system:role:list")
     @Operation(summary = "分页查询角色")
-    public PageResult<RoleVo> list(@ParameterObject QueryRoleDto query) {
+    public Map<String, Object> list(@ParameterObject QueryRoleDto query) {
         return roleService.findPage(query);
     }
 
@@ -72,7 +72,7 @@ public class RoleController {
     @RequirePermission("system:role:delete")
     @Log(module = "角色管理", type = BusinessType.DELETE, description = "删除角色")
     @Operation(summary = "删除角色")
-    public void delete(@PathVariable String id) {
-        roleService.delete(id);
+    public Map<String, String> delete(@PathVariable String id) {
+        return roleService.delete(id);
     }
 }

@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.joint.common.exception.BusinessException;
-import org.joint.common.response.PageResult;
 import org.joint.modules.system.role.dto.CreateRoleDto;
 import org.joint.modules.system.role.dto.QueryRoleDto;
 import org.joint.modules.system.role.dto.UpdateRoleDto;
@@ -20,8 +19,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +35,13 @@ public class RoleService {
     private final RoleMenuMapper roleMenuMapper;
     private final UserRoleMapper userRoleMapper;
 
-    public PageResult<RoleVo> findPage(QueryRoleDto query) {
-        Page<Role> page = new Page<>(query.getPage(), query.getSize());
+    public Map<String, Object> findPage(QueryRoleDto query) {
+        Page<Role> page = new Page<>(query.getPage(), query.getPageSize());
         IPage<Role> result = roleMapper.selectPage(page, buildQueryWrapper(query));
-        return PageResult.of(result, this::toVo);
+        return Map.of(
+                "list", result.getRecords().stream().map(this::toVo).toList(),
+                "total", result.getTotal()
+        );
     }
 
     public RoleVo findById(String id) {
@@ -44,16 +49,17 @@ public class RoleService {
     }
 
     public RoleVo create(CreateRoleDto dto) {
-        ensureUnique(dto.getName(), dto.getCode(), null);
+        ensureNameUnique(dto.getName(), null);
 
         Role role = new Role();
-        BeanUtils.copyProperties(dto, role);
-        if (role.getSort() == null) {
-            role.setSort(0);
-        }
+        role.setName(dto.getName());
         if (role.getStatus() == null) {
             role.setStatus(0);
         }
+        role.setStatus(dto.getStatus() == null ? 0 : dto.getStatus());
+        role.setRemark(dto.getRemark() == null ? "" : dto.getRemark());
+        role.setSort(0);
+        role.setCode(generateRoleCode());
         role.setIsSuper(dto.getPermissions() != null && dto.getPermissions().contains("*"));
 
         roleMapper.insert(role);
@@ -66,21 +72,17 @@ public class RoleService {
         if (isBuiltinRole(role) && changesBuiltinIdentity(role, dto)) {
             throw new BusinessException("内置角色不能修改");
         }
+        if (isBuiltinRole(role) && "admin".equals(role.getCode()) && Integer.valueOf(1).equals(dto.getStatus())) {
+            throw new BusinessException("admin 角色不允许停用");
+        }
 
         String targetName = dto.getName() != null ? dto.getName() : role.getName();
-        String targetCode = dto.getCode() != null ? dto.getCode() : role.getCode();
-        if (!targetName.equals(role.getName()) || !targetCode.equals(role.getCode())) {
-            ensureUnique(targetName, targetCode, id);
+        if (!targetName.equals(role.getName())) {
+            ensureNameUnique(targetName, id);
         }
 
         if (dto.getName() != null) {
             role.setName(dto.getName());
-        }
-        if (dto.getCode() != null) {
-            role.setCode(dto.getCode());
-        }
-        if (dto.getSort() != null) {
-            role.setSort(dto.getSort());
         }
         if (dto.getStatus() != null) {
             role.setStatus(dto.getStatus());
@@ -98,7 +100,7 @@ public class RoleService {
         return toVo(role);
     }
 
-    public void delete(String id) {
+    public Map<String, String> delete(String id) {
         Role role = getExistingRole(id);
         if (isBuiltinRole(role)) {
             throw new BusinessException("内置角色不能删除");
@@ -111,15 +113,15 @@ public class RoleService {
 
         deleteRoleMenus(id);
         roleMapper.deleteById(id);
+        return Map.of("id", id);
     }
 
     public List<RoleVo> findAllEnabled() {
         return roleMapper.selectList(new LambdaQueryWrapper<Role>()
                         .eq(Role::getStatus, 0)
-                        .orderByAsc(Role::getSort)
                         .orderByDesc(Role::getCreatedAt))
                 .stream()
-                .map(this::toSimpleVo)
+                .map(this::toVo)
                 .toList();
     }
 
@@ -134,30 +136,27 @@ public class RoleService {
     private LambdaQueryWrapper<Role> buildQueryWrapper(QueryRoleDto query) {
         return new LambdaQueryWrapper<Role>()
                 .like(StringUtils.hasText(query.getName()), Role::getName, query.getName())
-                .like(StringUtils.hasText(query.getCode()), Role::getCode, query.getCode())
                 .eq(query.getStatus() != null, Role::getStatus, query.getStatus())
-                .orderByAsc(Role::getSort)
                 .orderByDesc(Role::getCreatedAt);
     }
 
-    private void ensureUnique(String name, String code, String excludeId) {
+    private void ensureNameUnique(String name, String excludeId) {
         LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<Role>()
-                .nested(w -> w.eq(Role::getName, name).or().eq(Role::getCode, code));
+                .eq(Role::getName, name);
         if (excludeId != null) {
             wrapper.ne(Role::getId, excludeId);
         }
         if (roleMapper.selectCount(wrapper) > 0) {
-            throw new BusinessException("角色名称或编码已存在");
+            throw new BusinessException("角色名称已存在");
         }
     }
 
     private boolean changesBuiltinIdentity(Role role, UpdateRoleDto dto) {
-        return (dto.getName() != null && !dto.getName().equals(role.getName()))
-                || (dto.getCode() != null && !dto.getCode().equals(role.getCode()));
+        return dto.getName() != null && !dto.getName().equals(role.getName());
     }
 
     private boolean isBuiltinRole(Role role) {
-        return BUILTIN_ROLE_CODES.contains(role.getCode());
+        return role.getCode() != null && BUILTIN_ROLE_CODES.contains(role.getCode());
     }
 
     private void saveRoleMenus(String roleId, List<String> permissions) {
@@ -187,7 +186,12 @@ public class RoleService {
 
     private RoleVo toVo(Role role) {
         RoleVo vo = new RoleVo();
-        BeanUtils.copyProperties(role, vo);
+        vo.setId(role.getId());
+        vo.setName(role.getName());
+        vo.setStatus(role.getStatus());
+        vo.setIsSuper(role.getIsSuper());
+        vo.setRemark(role.getRemark() == null ? "" : role.getRemark());
+        vo.setCreateTime(formatDateTime(role.getCreatedAt()));
         vo.setIsBuiltin(isBuiltinRole(role));
         if (Boolean.TRUE.equals(role.getIsSuper())) {
             vo.setPermissions(List.of("*"));
@@ -197,10 +201,14 @@ public class RoleService {
         return vo;
     }
 
-    private RoleVo toSimpleVo(Role role) {
-        RoleVo vo = new RoleVo();
-        BeanUtils.copyProperties(role, vo);
-        vo.setIsBuiltin(isBuiltinRole(role));
-        return vo;
+    private String generateRoleCode() {
+        return "role_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return dateTime.toString();
     }
 }

@@ -2,7 +2,6 @@ package org.joint.modules.system.role;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.joint.common.exception.BusinessException;
-import org.joint.common.response.PageResult;
 import org.joint.modules.system.role.dto.CreateRoleDto;
 import org.joint.modules.system.role.dto.QueryRoleDto;
 import org.joint.modules.system.role.dto.UpdateRoleDto;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,7 +46,6 @@ class RoleServiceTest {
         Role role = new Role();
         role.setId("r-1");
         role.setName("运营");
-        role.setCode("ops");
         role.setStatus(0);
 
         Page<Role> page = new Page<>(1, 10);
@@ -56,18 +55,19 @@ class RoleServiceTest {
         when(roleMapper.selectPage(any(), any())).thenReturn(page);
         when(roleMenuMapper.selectList(any())).thenReturn(List.of());
 
-        PageResult<RoleVo> result = roleService.findPage(new QueryRoleDto());
+        Map<String, Object> result = roleService.findPage(new QueryRoleDto());
+        @SuppressWarnings("unchecked")
+        List<RoleVo> list = (List<RoleVo>) result.get("list");
 
-        assertThat(result.getData()).hasSize(1);
-        assertThat(result.getData().get(0).getCode()).isEqualTo("ops");
-        assertThat(result.getTotal()).isEqualTo(1);
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getName()).isEqualTo("运营");
+        assertThat(result.get("total")).isEqualTo(1L);
     }
 
     @Test
     void createStoresPermissionsAndMarksSuperRole() {
         CreateRoleDto dto = new CreateRoleDto();
         dto.setName("管理员");
-        dto.setCode("manager");
         dto.setPermissions(List.of("*", "m-1"));
 
         when(roleMapper.selectCount(any())).thenReturn(0L);
@@ -88,8 +88,8 @@ class RoleServiceTest {
     void updateRejectsBuiltinRoleMutation() {
         Role role = new Role();
         role.setId("r-1");
-        role.setName("管理员");
         role.setCode("admin");
+        role.setName("admin");
 
         UpdateRoleDto dto = new UpdateRoleDto();
         dto.setName("超级管理员");
@@ -99,6 +99,24 @@ class RoleServiceTest {
         assertThatThrownBy(() -> roleService.update("r-1", dto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("内置角色不能修改");
+    }
+
+    @Test
+    void updateRejectsDisablingAdminRole() {
+        Role role = new Role();
+        role.setId("r-1");
+        role.setCode("admin");
+        role.setName("admin");
+        role.setStatus(0);
+
+        UpdateRoleDto dto = new UpdateRoleDto();
+        dto.setStatus(1);
+
+        when(roleMapper.selectById("r-1")).thenReturn(role);
+
+        assertThatThrownBy(() -> roleService.update("r-1", dto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("admin 角色不允许停用");
     }
 
     @Test
@@ -118,6 +136,21 @@ class RoleServiceTest {
     }
 
     @Test
+    void deleteReturnsDeletedIdPayload() {
+        Role role = new Role();
+        role.setId("r-1");
+        role.setCode("ops");
+
+        when(roleMapper.selectById("r-1")).thenReturn(role);
+        when(userRoleMapper.selectCount(any())).thenReturn(0L);
+
+        Map<String, String> result = roleService.delete("r-1");
+
+        verify(roleMapper).deleteById("r-1");
+        assertThat(result).containsEntry("id", "r-1");
+    }
+
+    @Test
     void findByIdReturnsWildcardForSuperRole() {
         Role role = new Role();
         role.setId("r-1");
@@ -132,20 +165,19 @@ class RoleServiceTest {
     }
 
     @Test
-    void findAllEnabledReturnsOptionRolesWithoutPermissions() {
+    void findAllEnabledReturnsOptionRolesWithPermissionsField() {
         Role role = new Role();
         role.setId("r-1");
         role.setName("运营");
-        role.setCode("ops");
         role.setStatus(0);
 
         when(roleMapper.selectList(any())).thenReturn(List.of(role));
+        when(roleMenuMapper.selectList(any())).thenReturn(List.of());
 
         List<RoleVo> result = roleService.findAllEnabled();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCode()).isEqualTo("ops");
-        assertThat(result.get(0).getPermissions()).isNull();
+        assertThat(result.get(0).getPermissions()).isEmpty();
         verify(roleMapper, times(1)).selectList(any());
     }
 }

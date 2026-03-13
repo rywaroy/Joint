@@ -38,14 +38,25 @@ public class PermissionService {
                 .distinct()
                 .toList();
 
-        List<Role> roles = roleMapper.selectBatchIds(roleIds);
+        QueryWrapper<Role> roleWrapper = new QueryWrapper<>();
+        roleWrapper.in("id", roleIds);
+        roleWrapper.eq("status", 0);
+        List<Role> roles = roleMapper.selectList(roleWrapper).stream()
+                .filter(role -> Integer.valueOf(0).equals(role.getStatus()))
+                .toList();
+        if (roles.isEmpty()) {
+            return Set.of();
+        }
         boolean isAdmin = roles.stream()
                 .anyMatch(role -> Boolean.TRUE.equals(role.getIsSuper()) || "admin".equals(role.getCode()));
         if (isAdmin) {
             QueryWrapper<Menu> allMenuWrapper = new QueryWrapper<>();
             allMenuWrapper.isNotNull("auth_code");
             allMenuWrapper.ne("auth_code", "");
+            allMenuWrapper.eq("status", 0);
             return menuMapper.selectList(allMenuWrapper).stream()
+                    .filter(menu -> Integer.valueOf(0).equals(menu.getStatus()))
+                    .filter(menu -> menu.getAuthCode() != null && !menu.getAuthCode().isBlank())
                     .map(Menu::getAuthCode)
                     .collect(Collectors.toSet());
         }
@@ -66,7 +77,10 @@ public class PermissionService {
         menuWrapper.in("id", menuIds);
         menuWrapper.isNotNull("auth_code");
         menuWrapper.ne("auth_code", "");
+        menuWrapper.eq("status", 0);
         return menuMapper.selectList(menuWrapper).stream()
+                .filter(menu -> Integer.valueOf(0).equals(menu.getStatus()))
+                .filter(menu -> menu.getAuthCode() != null && !menu.getAuthCode().isBlank())
                 .map(Menu::getAuthCode)
                 .collect(Collectors.toSet());
     }

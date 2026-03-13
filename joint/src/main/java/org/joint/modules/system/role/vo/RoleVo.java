@@ -3,7 +3,6 @@ package org.joint.modules.system.role.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -13,10 +12,6 @@ public class RoleVo {
     private String id;
 
     private String name;
-
-    private String code;
-
-    private Integer sort;
 
     private Integer status;
 
@@ -28,5 +23,5 @@ public class RoleVo {
 
     private List<String> permissions;
 
-    private LocalDateTime createdAt;
+    private String createTime;
 }
