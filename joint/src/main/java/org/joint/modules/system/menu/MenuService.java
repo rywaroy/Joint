@@ -7,6 +7,7 @@ import org.joint.modules.system.menu.dto.CreateMenuDto;
 import org.joint.modules.system.menu.dto.UpdateMenuDto;
 import org.joint.modules.system.menu.entity.Menu;
 import org.joint.modules.system.menu.mapper.MenuMapper;
+import org.joint.modules.system.menu.vo.MenuRouteVo;
 import org.joint.modules.system.menu.vo.MenuVo;
 import org.joint.modules.system.role.entity.RoleMenu;
 import org.joint.modules.system.role.mapper.RoleMenuMapper;
@@ -18,7 +19,9 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -152,6 +155,12 @@ public class MenuService {
         return buildTree(menus, null);
     }
 
+    public List<MenuRouteVo> getCurrentUserRoutes(String userId) {
+        return getUserMenuTree(userId).stream()
+                .map(this::toRouteVo)
+                .toList();
+    }
+
     private void validateParent(String parentId) {
         if (!StringUtils.hasText(parentId) || "0".equals(parentId)) {
             return;
@@ -194,6 +203,40 @@ public class MenuService {
     private Comparator<MenuVo> menuComparator() {
         return Comparator.comparing(MenuVo::getSort, Comparator.nullsFirst(Integer::compareTo))
                 .thenComparing(MenuVo::getCreatedAt, Comparator.nullsFirst(Comparator.naturalOrder()));
+    }
+
+    private MenuRouteVo toRouteVo(MenuVo menu) {
+        MenuRouteVo route = new MenuRouteVo();
+        route.setName(menu.getName());
+        route.setPath(menu.getPath());
+        route.setMeta(buildRouteMeta(menu));
+        if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
+            List<MenuRouteVo> children = menu.getChildren().stream()
+                    .map(this::toRouteVo)
+                    .toList();
+            route.setComponent("BasicLayout");
+            route.setChildren(children);
+            route.setRedirect(children.get(0).getPath());
+            return route;
+        }
+
+        route.setComponent(menu.getComponent());
+        return route;
+    }
+
+    private Map<String, Object> buildRouteMeta(MenuVo menu) {
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("title", menu.getName());
+        if (StringUtils.hasText(menu.getIcon())) {
+            meta.put("icon", menu.getIcon());
+        }
+        if (menu.getSort() != null) {
+            meta.put("order", menu.getSort());
+        }
+        if (Boolean.TRUE.equals(menu.getHidden())) {
+            meta.put("hideInMenu", true);
+        }
+        return meta;
     }
 
     private MenuVo toVo(Menu menu) {

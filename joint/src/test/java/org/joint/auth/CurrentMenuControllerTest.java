@@ -3,23 +3,25 @@ package org.joint.auth;
 import org.joint.common.security.CurrentUserArgumentResolver;
 import org.joint.common.security.JwtAuthenticationFilter;
 import org.joint.common.security.JwtTokenProvider;
+import org.joint.common.security.PermissionService;
 import org.joint.common.security.SecurityExceptionHandlers;
 import org.joint.common.security.TokenBlacklistService;
 import org.joint.config.JwtProperties;
 import org.joint.config.SecurityConfig;
 import org.joint.config.WebMvcConfig;
 import org.joint.modules.system.dept.mapper.DeptMapper;
+import org.joint.modules.system.menu.CurrentMenuController;
+import org.joint.modules.system.menu.MenuService;
 import org.joint.modules.system.menu.mapper.MenuMapper;
 import org.joint.modules.system.operlog.mapper.OperLogMapper;
 import org.joint.modules.system.post.mapper.PostMapper;
 import org.joint.modules.system.post.mapper.UserPostMapper;
 import org.joint.modules.system.role.mapper.RoleMapper;
 import org.joint.modules.system.role.mapper.RoleMenuMapper;
-import org.joint.modules.system.user.CurrentUserController;
 import org.joint.modules.system.user.UserService;
 import org.joint.modules.system.user.mapper.UserMapper;
 import org.joint.modules.system.user.mapper.UserRoleMapper;
-import org.joint.modules.system.user.vo.CurrentUserInfoVo;
+import org.joint.modules.system.menu.vo.MenuRouteVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -37,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(CurrentUserController.class)
+@WebMvcTest(CurrentMenuController.class)
 @Import({
         SecurityConfig.class,
         JwtAuthenticationFilter.class,
@@ -51,13 +53,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "jwt.secret=joint-phase-3-secret-key-must-be-at-least-32",
         "jwt.expiration=86400000"
 })
-class CurrentUserControllerTest {
+class CurrentMenuControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private MenuService menuService;
+
+    @MockitoBean
+    private PermissionService permissionService;
 
     @MockitoBean
     private UserService userService;
@@ -96,30 +104,53 @@ class CurrentUserControllerTest {
     private UserPostMapper userPostMapper;
 
     @Test
-    void infoReturnsCurrentUser() throws Exception {
-        CurrentUserInfoVo userInfo = new CurrentUserInfoVo();
-        userInfo.setId("u-1");
-        userInfo.setUsername("admin");
-        userInfo.setRealName("管理员");
-        userInfo.setRoles(List.of("admin"));
-        when(userService.findCurrentUserInfo(org.mockito.ArgumentMatchers.any())).thenReturn(userInfo);
+    void routesReturnsCurrentUserRoutes() throws Exception {
+        MenuRouteVo child = new MenuRouteVo();
+        child.setName("Analytics");
+        child.setPath("/analytics");
+        child.setComponent("dashboard/analytics/index");
+        child.setMeta(Map.of("title", "Analytics", "order", 1));
+
+        MenuRouteVo root = new MenuRouteVo();
+        root.setName("Dashboard");
+        root.setPath("/dashboard");
+        root.setComponent("BasicLayout");
+        root.setRedirect("/analytics");
+        root.setMeta(Map.of("title", "Dashboard", "order", -1));
+        root.setChildren(List.of(child));
+
+        when(menuService.getCurrentUserRoutes("u-1")).thenReturn(List.of(root));
 
         String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
 
-        mockMvc.perform(get("/user/info")
+        mockMvc.perform(get("/menu/routes")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.id").value("u-1"))
-                .andExpect(jsonPath("$.data.username").value("admin"))
-                .andExpect(jsonPath("$.data.realName").value("管理员"))
-                .andExpect(jsonPath("$.data.roles[0]").value("admin"));
+                .andExpect(jsonPath("$.data[0].name").value("Dashboard"))
+                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"))
+                .andExpect(jsonPath("$.data[0].redirect").value("/analytics"))
+                .andExpect(jsonPath("$.data[0].children[0].component").value("dashboard/analytics/index"));
     }
 
     @Test
-    void infoRejectsUnauthenticatedRequest() throws Exception {
-        mockMvc.perform(get("/user/info"))
+    void routesRejectsUnauthenticatedRequest() throws Exception {
+        mockMvc.perform(get("/menu/routes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void codesReturnsCurrentUserAccessCodes() throws Exception {
+        when(permissionService.getUserPermissions("u-1")).thenReturn(java.util.Set.of("system:menu:list", "system:user:list"));
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/codes")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0]").value("system:menu:list"))
+                .andExpect(jsonPath("$.data[1]").value("system:user:list"));
     }
 }

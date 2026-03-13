@@ -15,7 +15,9 @@ import org.joint.modules.system.post.mapper.UserPostMapper;
 import org.joint.modules.system.user.dto.CreateUserDto;
 import org.joint.modules.system.user.dto.QueryUserDto;
 import org.joint.modules.system.user.dto.UpdateUserDto;
+import org.joint.common.security.LoginUser;
 import org.joint.modules.system.user.entity.User;
+import org.joint.modules.system.user.vo.CurrentUserInfoVo;
 import org.joint.modules.system.user.entity.UserRole;
 import org.joint.modules.system.user.mapper.UserMapper;
 import org.joint.modules.system.user.mapper.UserRoleMapper;
@@ -66,6 +68,17 @@ public class UserService {
     @Cacheable(value = "user-detail", key = "#id")
     public UserDetailVo findDetailById(String id) {
         return toDetailVo(getExistingUser(id));
+    }
+
+    public CurrentUserInfoVo findCurrentUserInfo(LoginUser loginUser) {
+        User user = getExistingUser(loginUser.getUserId());
+        CurrentUserInfoVo vo = new CurrentUserInfoVo();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setRealName(user.getNickName());
+        vo.setAvatar(user.getAvatar());
+        vo.setRoles(loginUser.getRoles());
+        return vo;
     }
 
     public User findByUsername(String username) {
