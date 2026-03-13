@@ -34,6 +34,10 @@ public class MenuService {
     private final UserRoleMapper userRoleMapper;
 
     public List<MenuVo> getMenuTree() {
+        return getMenuTree(null, null, null, null);
+    }
+
+    public List<MenuVo> getMenuTree(String name, String parentId, Integer status, Integer type) {
         List<MenuVo> menus = menuMapper.selectList(new LambdaQueryWrapper<Menu>()
                         .orderByAsc(Menu::getSort)
                         .orderByDesc(Menu::getCreatedAt))
@@ -41,7 +45,18 @@ public class MenuService {
                 .map(this::toVo)
                 .sorted(menuComparator())
                 .toList();
-        return buildTree(menus, null);
+        if (!StringUtils.hasText(name) && !StringUtils.hasText(parentId) && status == null && type == null) {
+            return buildTree(menus, null);
+        }
+
+        Set<String> includedIds = menus.stream()
+                .filter(menu -> matches(menu, name, parentId, status, type))
+                .flatMap(menu -> getAncestorIds(menu, menus).stream())
+                .collect(Collectors.toSet());
+        if (includedIds.isEmpty()) {
+            return List.of();
+        }
+        return buildTree(menus.stream().filter(menu -> includedIds.contains(menu.getId())).toList(), null);
     }
 
     public MenuVo findById(String id) {
@@ -129,6 +144,20 @@ public class MenuService {
         menuMapper.deleteById(id);
     }
 
+    public boolean checkNameExists(String name, String id) {
+        return menuMapper.selectList(new LambdaQueryWrapper<Menu>()
+                        .eq(Menu::getName, name))
+                .stream()
+                .anyMatch(menu -> !menu.getId().equals(id));
+    }
+
+    public boolean checkPathExists(String path, String id) {
+        return menuMapper.selectList(new LambdaQueryWrapper<Menu>()
+                        .eq(Menu::getPath, path))
+                .stream()
+                .anyMatch(menu -> !menu.getId().equals(id));
+    }
+
     public List<MenuVo> getUserMenuTree(String userId) {
         List<UserRole> userRoles = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
         if (userRoles.isEmpty()) {
@@ -203,6 +232,35 @@ public class MenuService {
     private Comparator<MenuVo> menuComparator() {
         return Comparator.comparing(MenuVo::getSort, Comparator.nullsFirst(Integer::compareTo))
                 .thenComparing(MenuVo::getCreatedAt, Comparator.nullsFirst(Comparator.naturalOrder()));
+    }
+
+    private boolean matches(MenuVo menu, String name, String parentId, Integer status, Integer type) {
+        if (StringUtils.hasText(name) && !menu.getName().contains(name)) {
+            return false;
+        }
+        if (StringUtils.hasText(parentId) && !parentId.equals(menu.getParentId())) {
+            return false;
+        }
+        if (status != null && !status.equals(menu.getStatus())) {
+            return false;
+        }
+        return type == null || type.equals(menu.getType());
+    }
+
+    private List<String> getAncestorIds(MenuVo menu, List<MenuVo> allMenus) {
+        List<String> ids = new ArrayList<>();
+        ids.add(menu.getId());
+        String currentParentId = menu.getParentId();
+        while (StringUtils.hasText(currentParentId) && !"0".equals(currentParentId)) {
+            String parentId = currentParentId;
+            ids.add(parentId);
+            MenuVo parent = allMenus.stream()
+                    .filter(item -> parentId.equals(item.getId()))
+                    .findFirst()
+                    .orElse(null);
+            currentParentId = parent != null ? parent.getParentId() : null;
+        }
+        return ids;
     }
 
     private MenuRouteVo toRouteVo(MenuVo menu) {

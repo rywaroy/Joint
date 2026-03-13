@@ -136,4 +136,55 @@ class MenuServiceTest {
         assertThat(result.get(0).getId()).isEqualTo("m-root");
         assertThat(result.get(0).getChildren()).isNull();
     }
+
+    @Test
+    void checkNameExistsIgnoresCurrentRecord() {
+        Menu current = new Menu();
+        current.setId("m-1");
+        current.setName("SystemMenu");
+
+        when(menuMapper.selectList(any())).thenReturn(List.of(current));
+
+        assertThat(menuService.checkNameExists("SystemMenu", "m-1")).isFalse();
+        assertThat(menuService.checkNameExists("SystemMenu", "m-2")).isTrue();
+    }
+
+    @Test
+    void checkPathExistsMatchesExistingPath() {
+        Menu menu = new Menu();
+        menu.setId("m-1");
+        menu.setPath("/system/menu");
+
+        when(menuMapper.selectList(any())).thenReturn(List.of(menu));
+
+        assertThat(menuService.checkPathExists("/system/menu", null)).isTrue();
+        assertThat(menuService.checkPathExists("/system/menu", "m-1")).isFalse();
+    }
+
+    @Test
+    void getMenuTreeWithFiltersKeepsMatchingHierarchy() {
+        Menu root = new Menu();
+        root.setId("m-root");
+        root.setName("系统");
+        root.setType(0);
+        root.setStatus(0);
+        root.setSort(1);
+
+        Menu child = new Menu();
+        child.setId("m-menu");
+        child.setParentId("m-root");
+        child.setName("菜单管理");
+        child.setType(1);
+        child.setStatus(0);
+        child.setSort(1);
+
+        when(menuMapper.selectList(any())).thenReturn(List.of(root, child));
+
+        List<MenuVo> result = menuService.getMenuTree("菜单", null, 0, 1);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo("m-root");
+        assertThat(result.get(0).getChildren()).hasSize(1);
+        assertThat(result.get(0).getChildren().get(0).getId()).isEqualTo("m-menu");
+    }
 }

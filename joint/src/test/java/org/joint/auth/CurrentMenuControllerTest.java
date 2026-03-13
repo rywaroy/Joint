@@ -21,12 +21,16 @@ import org.joint.modules.system.role.mapper.RoleMenuMapper;
 import org.joint.modules.system.user.UserService;
 import org.joint.modules.system.user.mapper.UserMapper;
 import org.joint.modules.system.user.mapper.UserRoleMapper;
+import org.joint.modules.system.menu.dto.CreateMenuDto;
+import org.joint.modules.system.menu.dto.UpdateMenuDto;
+import org.joint.modules.system.menu.vo.MenuVo;
 import org.joint.modules.system.menu.vo.MenuRouteVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,8 +38,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -102,6 +112,227 @@ class CurrentMenuControllerTest {
 
     @MockitoBean
     private UserPostMapper userPostMapper;
+
+    @Test
+    void listReturnsTreeMenusForManagementPage() throws Exception {
+        MenuVo child = new MenuVo();
+        child.setId("m-user");
+        child.setParentId("m-system");
+        child.setName("SystemUser");
+        child.setPath("/system/user");
+        child.setComponent("/system/user/list");
+        child.setType(1);
+        child.setStatus(0);
+        child.setAuthCode("system:user:list");
+
+        MenuVo root = new MenuVo();
+        root.setId("m-system");
+        root.setName("System");
+        root.setPath("/system");
+        root.setType(0);
+        root.setStatus(0);
+        root.setChildren(List.of(child));
+
+        when(menuService.getMenuTree()).thenReturn(List.of(root));
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/list")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0].id").value("m-system"))
+                .andExpect(jsonPath("$.data[0].type").value("catalog"))
+                .andExpect(jsonPath("$.data[0].meta.title").value("System"))
+                .andExpect(jsonPath("$.data[0].children[0].pid").value("m-system"))
+                .andExpect(jsonPath("$.data[0].children[0].type").value("menu"))
+                .andExpect(jsonPath("$.data[0].children[0].meta.title").value("SystemUser"));
+    }
+
+    @Test
+    void treeReturnsTreeMenusForSelector() throws Exception {
+        MenuVo root = new MenuVo();
+        root.setId("m-system");
+        root.setName("System");
+        root.setType(0);
+        root.setStatus(0);
+
+        when(menuService.getMenuTree()).thenReturn(List.of(root));
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/tree")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0].id").value("m-system"))
+                .andExpect(jsonPath("$.data[0].meta.title").value("System"));
+    }
+
+    @Test
+    void nameExistsReturnsServiceResult() throws Exception {
+        when(menuService.checkNameExists("SystemMenu", "m-1")).thenReturn(true);
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/name-exists")
+                        .header("Authorization", "Bearer " + token)
+                        .param("name", "SystemMenu")
+                        .param("id", "m-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    void pathExistsReturnsServiceResult() throws Exception {
+        when(menuService.checkPathExists("/system/menu", "m-1")).thenReturn(true);
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/path-exists")
+                        .header("Authorization", "Bearer " + token)
+                        .param("path", "/system/menu")
+                        .param("id", "m-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    void getByIdReturnsFrontendMenuShape() throws Exception {
+        MenuVo menu = new MenuVo();
+        menu.setId("m-1");
+        menu.setParentId("m-root");
+        menu.setName("SystemMenu");
+        menu.setPath("/system/menu");
+        menu.setComponent("/system/menu/list");
+        menu.setType(1);
+        menu.setStatus(0);
+        menu.setAuthCode("system:menu:list");
+
+        when(menuService.findById("m-1")).thenReturn(menu);
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(get("/menu/m-1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value("m-1"))
+                .andExpect(jsonPath("$.data.pid").value("m-root"))
+                .andExpect(jsonPath("$.data.type").value("menu"))
+                .andExpect(jsonPath("$.data.meta.title").value("SystemMenu"));
+    }
+
+    @Test
+    void createAcceptsFrontendMenuPayload() throws Exception {
+        MenuVo created = new MenuVo();
+        created.setId("m-new");
+        created.setParentId("m-root");
+        created.setName("SystemMenu");
+        created.setPath("/system/menu");
+        created.setComponent("/system/menu/list");
+        created.setType(1);
+        created.setStatus(0);
+        created.setAuthCode("system:menu:list");
+
+        when(menuService.create(argThat(dto ->
+                "m-root".equals(dto.getParentId())
+                        && "SystemMenu".equals(dto.getName())
+                        && "/system/menu".equals(dto.getPath())
+                        && "/system/menu/list".equals(dto.getComponent())
+                        && Integer.valueOf(1).equals(dto.getType())
+                        && "system:menu:list".equals(dto.getAuthCode())
+                        && Integer.valueOf(3).equals(dto.getSort())
+                        && Integer.valueOf(0).equals(dto.getStatus())
+                        && Boolean.TRUE.equals(dto.getHidden())
+                        && "carbon:menu".equals(dto.getIcon())
+        ))).thenReturn(created);
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(post("/menu")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentId": "m-root",
+                                  "name": "SystemMenu",
+                                  "title": "system.menu.title",
+                                  "path": "/system/menu",
+                                  "component": "/system/menu/list",
+                                  "type": "menu",
+                                  "authCode": "system:menu:list",
+                                  "order": 3,
+                                  "status": 0,
+                                  "icon": "carbon:menu",
+                                  "hideInMenu": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value("m-new"))
+                .andExpect(jsonPath("$.data.pid").value("m-root"))
+                .andExpect(jsonPath("$.data.type").value("menu"))
+                .andExpect(jsonPath("$.data.meta.title").value("SystemMenu"));
+    }
+
+    @Test
+    void updateAcceptsFrontendMenuPayload() throws Exception {
+        MenuVo updated = new MenuVo();
+        updated.setId("m-1");
+        updated.setParentId("m-root");
+        updated.setName("SystemMenu");
+        updated.setPath("/system/menu");
+        updated.setComponent("/system/menu/list");
+        updated.setType(1);
+        updated.setStatus(0);
+
+        when(menuService.update(eq("m-1"), argThat(dto ->
+                "m-root".equals(dto.getParentId())
+                        && "SystemMenu".equals(dto.getName())
+                        && "/system/menu".equals(dto.getPath())
+                        && Integer.valueOf(4).equals(dto.getSort())
+                        && Boolean.FALSE.equals(dto.getHidden())
+                        && Integer.valueOf(1).equals(dto.getType())
+        ))).thenReturn(updated);
+
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(put("/menu/m-1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "pid": "m-root",
+                                  "name": "SystemMenu",
+                                  "title": "system.menu.title",
+                                  "path": "/system/menu",
+                                  "component": "/system/menu/list",
+                                  "type": "menu",
+                                  "order": 4,
+                                  "status": 0,
+                                  "hideInMenu": false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value("m-1"))
+                .andExpect(jsonPath("$.data.pid").value("m-root"));
+    }
+
+    @Test
+    void deleteDelegatesToService() throws Exception {
+        String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
+
+        mockMvc.perform(delete("/menu/m-1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(menuService).delete("m-1");
+    }
 
     @Test
     void routesReturnsCurrentUserRoutes() throws Exception {
