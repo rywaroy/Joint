@@ -11,12 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,7 +63,7 @@ class DeptServiceTest {
 
         assertThatThrownBy(() -> deptService.create(dto))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("同级下已存在相同名称的部门");
+                .hasMessage("同级部门名称已存在");
     }
 
     @Test
@@ -75,14 +77,14 @@ class DeptServiceTest {
         child.setParentId("d-root");
 
         UpdateDeptDto dto = new UpdateDeptDto();
-        dto.setParentId("d-child");
+        dto.setPid("d-child");
 
         when(deptMapper.selectById("d-root")).thenReturn(root);
         when(deptMapper.selectById("d-child")).thenReturn(child);
 
         assertThatThrownBy(() -> deptService.update("d-root", dto))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("不能将子部门设为父级");
+                .hasMessage("不能将部门移动到其子级下");
     }
 
     @Test
@@ -95,8 +97,22 @@ class DeptServiceTest {
 
         assertThatThrownBy(() -> deptService.delete("d-root"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("请先删除子部门");
+                .hasMessage("存在子部门，无法删除");
 
         verify(deptMapper, never()).deleteById("d-root");
+    }
+
+    @Test
+    void deleteReturnsDeletedId() {
+        Dept dept = new Dept();
+        dept.setId("d-root");
+
+        when(deptMapper.selectById("d-root")).thenReturn(dept);
+        when(deptMapper.selectCount(any())).thenReturn(0L);
+
+        Map<String, String> result = deptService.delete("d-root");
+
+        assertThat(result).containsEntry("id", "d-root");
+        verify(deptMapper, times(1)).deleteById("d-root");
     }
 }

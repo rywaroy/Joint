@@ -27,6 +27,8 @@ public class Dept {
 
     private Integer status;
 
+    private String remark;
+
     @TableLogic
     private Integer deleted;
 

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/system/dept")
@@ -34,7 +35,7 @@ public class DeptController {
     @GetMapping("/list")
     @RequirePermission("system:dept:list")
     @Operation(summary = "获取部门树")
-    public List<DeptVo> list(@ParameterObject QueryDeptDto query) {
+    public List<DeptVo> list(@Valid @ParameterObject QueryDeptDto query) {
         return deptService.findTree(query);
     }
 
@@ -58,7 +59,7 @@ public class DeptController {
     @RequirePermission("system:dept:delete")
     @Log(module = "部门管理", type = BusinessType.DELETE, description = "删除部门")
     @Operation(summary = "删除部门")
-    public void delete(@PathVariable String id) {
-        deptService.delete(id);
+    public Map<String, String> delete(@PathVariable String id) {
+        return deptService.delete(id);
     }
 }

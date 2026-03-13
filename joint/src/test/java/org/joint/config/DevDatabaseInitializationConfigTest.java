@@ -31,4 +31,15 @@ class DevDatabaseInitializationConfigTest {
         assertThat(schemaSql).doesNotContain("CREATE DATABASE IF NOT EXISTS");
         assertThat(schemaSql).doesNotContain("USE joint;");
     }
+
+    @Test
+    void mysqlSchemaScriptBackfillsDeptRemarkColumnForExistingTables() throws IOException {
+        String schemaSql = new ClassPathResource("sql/schema.sql")
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(schemaSql).contains("information_schema.COLUMNS");
+        assertThat(schemaSql).contains("COLUMN_NAME = 'remark'");
+        assertThat(schemaSql).contains("ALTER TABLE sys_dept ADD COLUMN remark");
+        assertThat(schemaSql).doesNotContain("ADD COLUMN IF NOT EXISTS remark");
+    }
 }

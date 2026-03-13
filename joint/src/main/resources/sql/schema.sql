@@ -79,10 +79,27 @@ CREATE TABLE IF NOT EXISTS sys_dept (
     phone VARCHAR(20) COMMENT '联系电话',
     email VARCHAR(100) COMMENT '邮箱',
     status TINYINT DEFAULT 0 COMMENT '状态 0-正常 1-禁用',
+    remark VARCHAR(500) COMMENT '备注',
     deleted TINYINT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) COMMENT '部门表';
+
+SET @joint_has_dept_remark = (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'sys_dept'
+      AND COLUMN_NAME = 'remark'
+);
+SET @joint_dept_remark_ddl = IF(
+    @joint_has_dept_remark = 0,
+    'ALTER TABLE sys_dept ADD COLUMN remark VARCHAR(500) COMMENT ''备注''',
+    'SELECT 1'
+);
+PREPARE joint_dept_remark_stmt FROM @joint_dept_remark_ddl;
+EXECUTE joint_dept_remark_stmt;
+DEALLOCATE PREPARE joint_dept_remark_stmt;
 
 -- 岗位表
 CREATE TABLE IF NOT EXISTS sys_post (
@@ -131,7 +148,7 @@ CREATE TABLE IF NOT EXISTS sys_oper_log (
 -- 默认基础数据
 -- 对齐 Nexus/scripts/init-admin.ts
 -- 说明：
--- 1. Java 侧 schema 没有 title、affix_tab、is_builtin、dept.remark 字段，这些配置不落库
+-- 1. Java 侧 schema 没有 title、affix_tab、is_builtin 字段，这些配置不落库
 -- 2. 角色 code 使用 Joint 当前实现要求的 admin / user
 
 -- 内置角色：admin、user
