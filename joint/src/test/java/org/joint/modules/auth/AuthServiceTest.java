@@ -68,7 +68,7 @@ class AuthServiceTest {
 
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("admin");
+        role.setName("admin");
 
         when(userMapper.selectOne(any())).thenReturn(user);
         when(passwordEncoder.matches("secret", "$2a$10$encoded")).thenReturn(true);

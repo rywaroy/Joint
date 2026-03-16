@@ -1,6 +1,5 @@
 package org.joint.auth;
 
-import org.joint.common.response.PageResult;
 import org.joint.common.security.JwtAuthenticationFilter;
 import org.joint.common.security.JwtTokenProvider;
 import org.joint.common.security.LoginUser;
@@ -102,12 +101,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void validBearerTokenAuthenticatesRequest() throws Exception {
-        PageResult<UserVo> page = new PageResult<>();
-        page.setData(List.of());
-        page.setTotal(0L);
-        page.setPage(1L);
-        page.setSize(10L);
-        when(userService.findPage(any())).thenReturn(page);
+        when(userService.findPage(any())).thenReturn(Map.of("list", List.of(), "total", 0L));
 
         String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));
         assertThat(jwtTokenProvider.validateToken(token)).isTrue();

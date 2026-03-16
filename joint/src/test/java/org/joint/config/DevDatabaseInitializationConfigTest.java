@@ -39,7 +39,7 @@ class DevDatabaseInitializationConfigTest {
 
         assertThat(schemaSql).contains("information_schema.COLUMNS");
         assertThat(schemaSql).contains("COLUMN_NAME = 'remark'");
-        assertThat(schemaSql).contains("ALTER TABLE sys_dept ADD COLUMN remark");
+        assertThat(schemaSql).contains("ALTER TABLE depts ADD COLUMN remark");
         assertThat(schemaSql).doesNotContain("ADD COLUMN IF NOT EXISTS remark");
     }
 }

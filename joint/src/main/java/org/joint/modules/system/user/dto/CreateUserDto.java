@@ -34,6 +34,9 @@ public class CreateUserDto {
     @Phone
     private String phone;
 
+    @Schema(description = "头像 URL")
+    private String avatar;
+
     @Schema(description = "状态 0-正常 1-禁用", example = "0")
     @Min(value = 0, message = "状态值无效")
     @Max(value = 1, message = "状态值无效")
@@ -45,8 +48,8 @@ public class CreateUserDto {
     @Schema(description = "备注")
     private String remark;
 
-    @Schema(description = "角色ID列表")
-    private List<String> roleIds;
+    @Schema(description = "角色名称列表")
+    private List<String> roles;
 
     @Schema(description = "岗位ID列表")
     private List<String> postIds;

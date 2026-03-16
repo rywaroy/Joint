@@ -43,12 +43,14 @@ class MenuServiceTest {
         Menu root = new Menu();
         root.setId("m-root");
         root.setName("系统");
+        root.setType("CATALOG");
         root.setSort(1);
 
         Menu child = new Menu();
         child.setId("m-child");
         child.setParentId("m-root");
         child.setName("用户");
+        child.setType("MENU");
         child.setSort(2);
 
         when(menuMapper.selectList(any())).thenReturn(List.of(root, child));
@@ -118,13 +120,13 @@ class MenuServiceTest {
         Menu root = new Menu();
         root.setId("m-root");
         root.setName("系统");
-        root.setType(1);
+        root.setType("MENU");
 
         Menu button = new Menu();
         button.setId("m-btn");
         button.setParentId("m-root");
         button.setName("删除");
-        button.setType(2);
+        button.setType("BUTTON");
 
         when(userRoleMapper.selectList(any())).thenReturn(List.of(userRole));
         when(roleMenuMapper.selectList(any())).thenReturn(List.of(roleMenu));
@@ -166,7 +168,7 @@ class MenuServiceTest {
         Menu root = new Menu();
         root.setId("m-root");
         root.setName("系统");
-        root.setType(0);
+        root.setType("CATALOG");
         root.setStatus(0);
         root.setSort(1);
 
@@ -174,13 +176,13 @@ class MenuServiceTest {
         child.setId("m-menu");
         child.setParentId("m-root");
         child.setName("菜单管理");
-        child.setType(1);
+        child.setType("MENU");
         child.setStatus(0);
         child.setSort(1);
 
         when(menuMapper.selectList(any())).thenReturn(List.of(root, child));
 
-        List<MenuVo> result = menuService.getMenuTree("菜单", null, 0, 1);
+        List<MenuVo> result = menuService.getMenuTree("菜单", null, 0, "MENU");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo("m-root");

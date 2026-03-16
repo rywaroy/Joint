@@ -1,18 +1,21 @@
 package org.joint.modules.system.role.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-@TableName("sys_role_menu")
+@TableName("role_menus")
 public class RoleMenu {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    private String id;
-
+    @TableField("roleId")
     private String roleId;
 
+    @TableField("menuId")
     private String menuId;
+
+    @TableField("grantedAt")
+    private LocalDateTime grantedAt;
 }

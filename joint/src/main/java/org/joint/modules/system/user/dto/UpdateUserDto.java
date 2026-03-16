@@ -24,6 +24,9 @@ public class UpdateUserDto {
     @Phone
     private String phone;
 
+    @Schema(description = "头像 URL")
+    private String avatar;
+
     @Schema(description = "所属部门ID")
     private String deptId;
 
@@ -35,8 +38,8 @@ public class UpdateUserDto {
     @Schema(description = "备注")
     private String remark;
 
-    @Schema(description = "角色ID列表")
-    private List<String> roleIds;
+    @Schema(description = "角色名称列表")
+    private List<String> roles;
 
     @Schema(description = "岗位ID列表")
     private List<String> postIds;

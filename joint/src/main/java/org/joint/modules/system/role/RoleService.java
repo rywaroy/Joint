@@ -23,13 +23,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class RoleService {
 
-    private static final Set<String> BUILTIN_ROLE_CODES = Set.of("admin", "user");
+    private static final Set<String> BUILTIN_ROLE_NAMES = Set.of("admin", "user");
 
     private final RoleMapper roleMapper;
     private final RoleMenuMapper roleMenuMapper;
@@ -53,13 +51,9 @@ public class RoleService {
 
         Role role = new Role();
         role.setName(dto.getName());
-        if (role.getStatus() == null) {
-            role.setStatus(0);
-        }
         role.setStatus(dto.getStatus() == null ? 0 : dto.getStatus());
         role.setRemark(dto.getRemark() == null ? "" : dto.getRemark());
-        role.setSort(0);
-        role.setCode(generateRoleCode());
+        role.setIsBuiltin(false);
         role.setIsSuper(dto.getPermissions() != null && dto.getPermissions().contains("*"));
 
         roleMapper.insert(role);
@@ -72,7 +66,7 @@ public class RoleService {
         if (isBuiltinRole(role) && changesBuiltinIdentity(role, dto)) {
             throw new BusinessException("内置角色不能修改");
         }
-        if (isBuiltinRole(role) && "admin".equals(role.getCode()) && Integer.valueOf(1).equals(dto.getStatus())) {
+        if (isBuiltinRole(role) && "admin".equals(role.getName()) && Integer.valueOf(1).equals(dto.getStatus())) {
             throw new BusinessException("admin 角色不允许停用");
         }
 
@@ -156,7 +150,7 @@ public class RoleService {
     }
 
     private boolean isBuiltinRole(Role role) {
-        return role.getCode() != null && BUILTIN_ROLE_CODES.contains(role.getCode());
+        return Boolean.TRUE.equals(role.getIsBuiltin()) || BUILTIN_ROLE_NAMES.contains(role.getName());
     }
 
     private void saveRoleMenus(String roleId, List<String> permissions) {
@@ -200,11 +194,6 @@ public class RoleService {
         }
         return vo;
     }
-
-    private String generateRoleCode() {
-        return "role_" + UUID.randomUUID().toString().replace("-", "");
-    }
-
     private String formatDateTime(LocalDateTime dateTime) {
         if (dateTime == null) {
             return null;

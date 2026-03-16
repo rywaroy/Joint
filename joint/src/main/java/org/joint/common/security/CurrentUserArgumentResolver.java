@@ -42,7 +42,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             return loginUser;
         }
         if (parameterType.equals(User.class)) {
-            return userService.findById(loginUser.getUserId());
+            return userService.findEntityById(loginUser.getUserId());
         }
         return null;
     }

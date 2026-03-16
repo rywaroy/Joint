@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableName("sys_user")
+@TableName("users")
 public class User {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -18,6 +18,7 @@ public class User {
     @TableField(select = false)
     private String password;
 
+    @TableField("nickName")
     private String nickName;
 
     private String email;
@@ -28,17 +29,15 @@ public class User {
 
     private Integer status;
 
+    @TableField("deptId")
     private String deptId;
 
     private String remark;
 
-    @TableLogic
-    private Integer deleted;
-
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(value = "createdAt", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "updatedAt", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     @TableField(exist = false)

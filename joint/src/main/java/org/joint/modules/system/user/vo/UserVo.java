@@ -3,7 +3,7 @@ package org.joint.modules.system.user.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Schema(description = "用户列表项")
@@ -33,12 +33,15 @@ public class UserVo {
     @Schema(description = "部门ID")
     private String deptId;
 
-    @Schema(description = "部门名称")
-    private String deptName;
-
     @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "角色名称列表")
+    private List<String> roles;
+
+    @Schema(description = "岗位ID列表")
+    private List<String> postIds;
+
     @Schema(description = "创建时间")
-    private LocalDateTime createdAt;
+    private String createTime;
 }

@@ -2,12 +2,10 @@ package org.joint.modules.system.user;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.joint.common.exception.BusinessException;
-import org.joint.common.response.PageResult;
-import org.joint.modules.system.dept.entity.Dept;
-import org.joint.modules.system.dept.mapper.DeptMapper;
-import org.joint.modules.system.dept.vo.DeptVo;
 import org.joint.modules.system.post.entity.UserPost;
 import org.joint.modules.system.post.mapper.UserPostMapper;
+import org.joint.modules.system.role.entity.Role;
+import org.joint.modules.system.role.mapper.RoleMapper;
 import org.joint.modules.system.user.dto.CreateUserDto;
 import org.joint.modules.system.user.dto.QueryUserDto;
 import org.joint.modules.system.user.dto.UpdateUserDto;
@@ -15,7 +13,6 @@ import org.joint.modules.system.user.entity.User;
 import org.joint.modules.system.user.entity.UserRole;
 import org.joint.modules.system.user.mapper.UserMapper;
 import org.joint.modules.system.user.mapper.UserRoleMapper;
-import org.joint.modules.system.user.vo.UserDetailVo;
 import org.joint.modules.system.user.vo.UserVo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,7 +35,7 @@ class UserServiceTest {
     private UserMapper userMapper;
     private UserRoleMapper userRoleMapper;
     private UserPostMapper userPostMapper;
-    private DeptMapper deptMapper;
+    private RoleMapper roleMapper;
     private PasswordEncoder passwordEncoder;
     private UserService userService;
 
@@ -46,89 +44,117 @@ class UserServiceTest {
         userMapper = mock(UserMapper.class);
         userRoleMapper = mock(UserRoleMapper.class);
         userPostMapper = mock(UserPostMapper.class);
-        deptMapper = mock(DeptMapper.class);
+        roleMapper = mock(RoleMapper.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        userService = new UserService(userMapper, userRoleMapper, userPostMapper, deptMapper, passwordEncoder);
+        userService = new UserService(userMapper, userRoleMapper, userPostMapper, roleMapper, passwordEncoder);
     }
 
     @Test
-    void findPageReturnsUserVosWithDeptName() {
+    void findPageReturnsNodeShapeWithRolesAndPostIds() {
         User user = new User();
         user.setId("u-1");
         user.setUsername("alice");
         user.setNickName("Alice");
-        user.setDeptId("d-1");
         user.setStatus(0);
 
         Page<User> page = new Page<>(1, 10);
         page.setRecords(List.of(user));
         page.setTotal(1);
 
-        Dept dept = new Dept();
-        dept.setId("d-1");
-        dept.setName("研发部");
-
-        when(userMapper.selectPage(any(), any())).thenReturn(page);
-        when(deptMapper.selectBatchIds(any())).thenReturn(List.of(dept));
-
-        PageResult<UserVo> result = userService.findPage(new QueryUserDto());
-
-        assertThat(result.getData()).hasSize(1);
-        assertThat(result.getData().get(0).getUsername()).isEqualTo("alice");
-        assertThat(result.getData().get(0).getDeptName()).isEqualTo("研发部");
-        assertThat(result.getTotal()).isEqualTo(1);
-    }
-
-    @Test
-    void findDetailByIdLoadsRoleIdsPostIdsAndDept() {
-        User user = new User();
-        user.setId("u-1");
-        user.setUsername("alice");
-        user.setNickName("Alice");
-        user.setDeptId("d-1");
-
         UserRole userRole = new UserRole();
         userRole.setUserId("u-1");
         userRole.setRoleId("r-1");
+
+        Role role = new Role();
+        role.setId("r-1");
+        role.setName("admin");
 
         UserPost userPost = new UserPost();
         userPost.setUserId("u-1");
         userPost.setPostId("p-1");
 
-        Dept dept = new Dept();
-        dept.setId("d-1");
-        dept.setName("研发部");
-
-        when(userMapper.selectById("u-1")).thenReturn(user);
+        when(userMapper.selectPage(any(), any())).thenReturn(page);
         when(userRoleMapper.selectList(any())).thenReturn(List.of(userRole));
+        when(roleMapper.selectBatchIds(any())).thenReturn(List.of(role));
         when(userPostMapper.selectList(any())).thenReturn(List.of(userPost));
-        when(deptMapper.selectById("d-1")).thenReturn(dept);
 
-        UserDetailVo result = userService.findDetailById("u-1");
+        Map<String, Object> result = userService.findPage(new QueryUserDto());
 
-        assertThat(result.getId()).isEqualTo("u-1");
-        assertThat(result.getRoleIds()).containsExactly("r-1");
-        assertThat(result.getPostIds()).containsExactly("p-1");
-        assertThat(result.getDept()).extracting(DeptVo::getName).isEqualTo("研发部");
+        assertThat(result.get("total")).isEqualTo(1L);
+        List<?> list = (List<?>) result.get("list");
+        assertThat(list).hasSize(1);
+        UserVo userVo = (UserVo) list.get(0);
+        assertThat(userVo.getUsername()).isEqualTo("alice");
+        assertThat(userVo.getRoles()).containsExactly("admin");
+        assertThat(userVo.getPostIds()).containsExactly("p-1");
     }
 
     @Test
-    void createEncodesPasswordAndSavesRelations() {
+    void findByIdReturnsNodeStyleUserVo() {
+        User user = new User();
+        user.setId("u-1");
+        user.setUsername("alice");
+        user.setNickName("Alice");
+
+        UserRole userRole = new UserRole();
+        userRole.setUserId("u-1");
+        userRole.setRoleId("r-1");
+
+        Role role = new Role();
+        role.setId("r-1");
+        role.setName("user");
+
+        UserPost userPost = new UserPost();
+        userPost.setUserId("u-1");
+        userPost.setPostId("p-1");
+
+        when(userMapper.selectById("u-1")).thenReturn(user);
+        when(userRoleMapper.selectList(any())).thenReturn(List.of(userRole));
+        when(roleMapper.selectBatchIds(any())).thenReturn(List.of(role));
+        when(userPostMapper.selectList(any())).thenReturn(List.of(userPost));
+
+        UserVo result = userService.findById("u-1");
+
+        assertThat(result.getId()).isEqualTo("u-1");
+        assertThat(result.getRoles()).containsExactly("user");
+        assertThat(result.getPostIds()).containsExactly("p-1");
+    }
+
+    @Test
+    void createEncodesPasswordAndSavesRelationsUsingRoleNames() {
         CreateUserDto dto = new CreateUserDto();
         dto.setUsername("alice");
         dto.setPassword("plain");
         dto.setNickName("Alice");
-        dto.setDeptId("d-1");
-        dto.setRoleIds(List.of("r-1", "r-2"));
+        dto.setRoles(List.of("admin", "user"));
         dto.setPostIds(List.of("p-1"));
+
+        Role admin = new Role();
+        admin.setId("r-1");
+        admin.setName("admin");
+
+        Role user = new Role();
+        user.setId("r-2");
+        user.setName("user");
 
         when(userMapper.selectCount(any())).thenReturn(0L);
         when(passwordEncoder.encode("plain")).thenReturn("encoded");
+        when(roleMapper.selectList(any())).thenReturn(List.of(admin, user));
         when(userMapper.insert(any(User.class))).thenAnswer(invocation -> {
-            User user = invocation.getArgument(0);
-            user.setId("u-1");
+            User created = invocation.getArgument(0);
+            created.setId("u-1");
             return 1;
         });
+        when(userMapper.selectById("u-1")).thenAnswer(invocation -> {
+            User created = new User();
+            created.setId("u-1");
+            created.setUsername("alice");
+            created.setNickName("Alice");
+            created.setStatus(0);
+            return created;
+        });
+        when(userRoleMapper.selectList(any())).thenReturn(List.of());
+        when(userPostMapper.selectList(any())).thenReturn(List.of());
 
         UserVo result = userService.create(dto);
 
@@ -141,26 +167,41 @@ class UserServiceTest {
     }
 
     @Test
-    void updateReplacesRelationsAndUpdatesMutableFields() {
+    void updateReplacesRelationsAndSupportsClearingOptionalFields() {
         User existing = new User();
         existing.setId("u-1");
         existing.setUsername("alice");
         existing.setNickName("Alice");
+        existing.setEmail("old@example.com");
+        existing.setPhone("13800138000");
         existing.setDeptId("d-1");
         existing.setStatus(0);
 
         UpdateUserDto dto = new UpdateUserDto();
         dto.setNickName("Alice 2");
-        dto.setDeptId("d-2");
+        dto.setEmail("");
+        dto.setPhone("");
+        dto.setDeptId("");
         dto.setStatus(1);
-        dto.setRoleIds(List.of("r-9"));
+        dto.setRoles(List.of("admin"));
         dto.setPostIds(List.of("p-9"));
 
+        Role role = new Role();
+        role.setId("r-9");
+        role.setName("admin");
+
         when(userMapper.selectById("u-1")).thenReturn(existing);
+        when(userMapper.selectCount(any())).thenReturn(0L);
+        when(roleMapper.selectList(any())).thenReturn(List.of(role));
+        when(userRoleMapper.selectList(any())).thenReturn(List.of());
+        when(userPostMapper.selectList(any())).thenReturn(List.of());
 
         UserVo result = userService.update("u-1", dto);
 
         assertThat(result.getNickName()).isEqualTo("Alice 2");
+        assertThat(existing.getEmail()).isNull();
+        assertThat(existing.getPhone()).isNull();
+        assertThat(existing.getDeptId()).isNull();
         verify(userRoleMapper).delete(any());
         verify(userPostMapper).delete(any());
         verify(userRoleMapper).insert(any(UserRole.class));
@@ -168,34 +209,32 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteRejectsAdminUser() {
-        User user = new User();
-        user.setId("u-1");
-        user.setUsername("admin");
+    void deleteRemovesRelationsAndReturnsDeletedId() {
+        User existing = new User();
+        existing.setId("u-1");
+        existing.setUsername("alice");
 
-        when(userMapper.selectById("u-1")).thenReturn(user);
+        when(userMapper.selectById("u-1")).thenReturn(existing);
 
-        assertThatThrownBy(() -> userService.delete("u-1"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("不能删除管理员用户");
+        Map<String, String> result = userService.delete("u-1");
+
+        assertThat(result).containsEntry("id", "u-1");
+        verify(userRoleMapper).delete(any());
+        verify(userPostMapper).delete(any());
+        verify(userMapper).deleteById("u-1");
     }
 
     @Test
-    void updateStatusAndResetPasswordPersistExpectedFields() {
+    void changePasswordRejectsWrongOldPassword() {
         User user = new User();
         user.setId("u-1");
-        user.setUsername("alice");
-        user.setStatus(0);
+        user.setPassword("encoded-old");
 
-        when(userMapper.selectById("u-1")).thenReturn(user);
-        when(passwordEncoder.encode("new-pass")).thenReturn("encoded-pass");
+        when(userMapper.selectOne(any())).thenReturn(user);
+        when(passwordEncoder.matches("wrong-old", "encoded-old")).thenReturn(false);
 
-        userService.updateStatus("u-1", 1);
-        userService.resetPassword("u-1", "new-pass");
-
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userMapper, times(2)).updateById(userCaptor.capture());
-        assertThat(userCaptor.getAllValues().get(0).getStatus()).isEqualTo(1);
-        assertThat(userCaptor.getAllValues().get(1).getPassword()).isEqualTo("encoded-pass");
+        assertThatThrownBy(() -> userService.changePassword("u-1", "wrong-old", "new-pass"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("旧密码错误");
     }
 }

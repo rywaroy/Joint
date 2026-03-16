@@ -27,7 +27,7 @@ public class PermissionService {
 
     public Set<String> getUserPermissions(String userId) {
         QueryWrapper<UserRole> userRoleWrapper = new QueryWrapper<>();
-        userRoleWrapper.eq("user_id", userId);
+        userRoleWrapper.eq("userId", userId);
         List<UserRole> userRoles = userRoleMapper.selectList(userRoleWrapper);
         if (userRoles.isEmpty()) {
             return Set.of();
@@ -48,11 +48,11 @@ public class PermissionService {
             return Set.of();
         }
         boolean isAdmin = roles.stream()
-                .anyMatch(role -> Boolean.TRUE.equals(role.getIsSuper()) || "admin".equals(role.getCode()));
+                .anyMatch(role -> Boolean.TRUE.equals(role.getIsSuper()) || "admin".equals(role.getName()));
         if (isAdmin) {
             QueryWrapper<Menu> allMenuWrapper = new QueryWrapper<>();
-            allMenuWrapper.isNotNull("auth_code");
-            allMenuWrapper.ne("auth_code", "");
+            allMenuWrapper.isNotNull("authCode");
+            allMenuWrapper.ne("authCode", "");
             allMenuWrapper.eq("status", 0);
             return menuMapper.selectList(allMenuWrapper).stream()
                     .filter(menu -> Integer.valueOf(0).equals(menu.getStatus()))
@@ -62,7 +62,7 @@ public class PermissionService {
         }
 
         QueryWrapper<RoleMenu> roleMenuWrapper = new QueryWrapper<>();
-        roleMenuWrapper.in("role_id", roleIds);
+        roleMenuWrapper.in("roleId", roleIds);
         List<RoleMenu> roleMenus = roleMenuMapper.selectList(roleMenuWrapper);
         if (roleMenus.isEmpty()) {
             return Set.of();
@@ -75,8 +75,8 @@ public class PermissionService {
 
         QueryWrapper<Menu> menuWrapper = new QueryWrapper<>();
         menuWrapper.in("id", menuIds);
-        menuWrapper.isNotNull("auth_code");
-        menuWrapper.ne("auth_code", "");
+        menuWrapper.isNotNull("authCode");
+        menuWrapper.ne("authCode", "");
         menuWrapper.eq("status", 0);
         return menuMapper.selectList(menuWrapper).stream()
                 .filter(menu -> Integer.valueOf(0).equals(menu.getStatus()))

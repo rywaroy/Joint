@@ -16,13 +16,15 @@ public class MenuVo {
 
     private String name;
 
+    private String title;
+
     private String path;
 
     private String component;
 
     private String icon;
 
-    private Integer type;
+    private String type;
 
     private String authCode;
 

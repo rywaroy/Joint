@@ -7,35 +7,28 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableName("sys_dept")
+@TableName("depts")
 public class Dept {
 
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
+    @TableField("pid")
     private String parentId;
 
     private String name;
-
-    private Integer sort;
-
-    private String leader;
-
-    private String phone;
-
-    private String email;
 
     private Integer status;
 
     private String remark;
 
-    @TableLogic
-    private Integer deleted;
+    @TableField("treePath")
+    private String treePath;
 
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(value = "createdAt", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "updatedAt", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     @TableField(exist = false)

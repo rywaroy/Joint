@@ -88,7 +88,6 @@ class RoleServiceTest {
     void updateRejectsBuiltinRoleMutation() {
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("admin");
         role.setName("admin");
 
         UpdateRoleDto dto = new UpdateRoleDto();
@@ -105,7 +104,6 @@ class RoleServiceTest {
     void updateRejectsDisablingAdminRole() {
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("admin");
         role.setName("admin");
         role.setStatus(0);
 
@@ -123,7 +121,7 @@ class RoleServiceTest {
     void deleteRejectsRoleAssignedToUsers() {
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("ops");
+        role.setName("ops");
 
         when(roleMapper.selectById("r-1")).thenReturn(role);
         when(userRoleMapper.selectCount(any())).thenReturn(1L);
@@ -139,7 +137,7 @@ class RoleServiceTest {
     void deleteReturnsDeletedIdPayload() {
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("ops");
+        role.setName("ops");
 
         when(roleMapper.selectById("r-1")).thenReturn(role);
         when(userRoleMapper.selectCount(any())).thenReturn(0L);
@@ -154,7 +152,7 @@ class RoleServiceTest {
     void findByIdReturnsWildcardForSuperRole() {
         Role role = new Role();
         role.setId("r-1");
-        role.setCode("ops");
+        role.setName("ops");
         role.setIsSuper(true);
 
         when(roleMapper.selectById("r-1")).thenReturn(role);

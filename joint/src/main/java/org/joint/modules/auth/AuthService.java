@@ -59,14 +59,14 @@ public class AuthService {
 
     private User findUserForLogin(String username) {
         QueryWrapper<User> wrapper = new QueryWrapper<>();
-        wrapper.select("id", "username", "password", "nick_name", "status");
+        wrapper.select("id", "username", "password", "nickName", "status");
         wrapper.eq("username", username);
         return userMapper.selectOne(wrapper);
     }
 
     private List<String> getUserRoleCodes(String userId) {
         QueryWrapper<UserRole> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", userId);
+        wrapper.eq("userId", userId);
         List<UserRole> userRoles = userRoleMapper.selectList(wrapper);
         if (userRoles.isEmpty()) {
             return List.of();
@@ -77,7 +77,7 @@ public class AuthService {
                 .toList();
 
         return roleMapper.selectBatchIds(roleIds).stream()
-                .map(Role::getCode)
+                .map(Role::getName)
                 .toList();
     }
 }

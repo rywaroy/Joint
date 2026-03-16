@@ -1,16 +1,28 @@
 package org.joint.modules.system.user;
 
 import org.joint.modules.system.user.dto.CreateUserDto;
+import org.junit.jupiter.api.AfterEach;
 import org.joint.support.integration.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class UserControllerIntegrationTest extends BaseIntegrationTest {
+
+    @AfterEach
+    void cleanUserModuleTables() {
+        jdbcTemplate.update("DELETE FROM user_posts");
+        jdbcTemplate.update("DELETE FROM posts");
+        jdbcTemplate.update("DELETE FROM user_roles");
+        jdbcTemplate.update("DELETE FROM role_menus");
+        jdbcTemplate.update("DELETE FROM menus");
+        jdbcTemplate.update("DELETE FROM roles");
+    }
 
     @Test
     void listRejectsUnauthenticatedRequest() throws Exception {
@@ -23,15 +35,14 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
     void infoReturnsCurrentAuthenticatedUser() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_user (id, username, password, nick_name, avatar, status, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO users (id, username, password, nickName, avatar, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "u-info-1",
                 "info_user",
                 "encoded-password",
                 "信息用户",
                 "https://example.com/avatar.png",
-                0,
                 0
         );
 
@@ -50,79 +61,74 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
     void menuRoutesReturnsDynamicRouteTree() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, status, is_super, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-menu-admin",
-                "管理员",
                 "admin",
                 0,
                 0,
-                0
+                1
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_user (id, username, password, nick_name, status, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "u-menu-1",
                 "menu_user",
                 "encoded-password",
                 "菜单用户",
-                0,
                 0
         );
         jdbcTemplate.update(
-                "INSERT INTO sys_user_role (id, user_id, role_id) VALUES (?, ?, ?)",
-                "ur-menu-1",
+                "INSERT INTO user_roles (userId, roleId) VALUES (?, ?)",
                 "u-menu-1",
                 "r-menu-admin"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_menu (id, parent_id, name, path, component, icon, type, auth_code, sort, status, hidden, deleted, created_at, updated_at)
+                INSERT INTO menus (id, parentId, name, title, path, component, icon, type, authCode, "order", status, hideInMenu, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "m-dashboard",
                 null,
                 "Dashboard",
+                "page.dashboard.title",
                 "/dashboard",
                 null,
                 "lucide:layout-dashboard",
-                0,
+                "CATALOG",
                 null,
                 -1,
                 0,
-                false,
-                0
+                false
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_menu (id, parent_id, name, path, component, icon, type, auth_code, sort, status, hidden, deleted, created_at, updated_at)
+                INSERT INTO menus (id, parentId, name, title, path, component, icon, type, authCode, "order", status, hideInMenu, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "m-analytics",
                 "m-dashboard",
                 "Analytics",
+                "page.dashboard.analytics",
                 "/analytics",
                 "dashboard/analytics/index",
                 "lucide:chart",
-                1,
+                "MENU",
                 null,
                 1,
                 0,
-                false,
-                0
+                false
         );
         jdbcTemplate.update(
-                "INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES (?, ?, ?)",
-                "rm-menu-1",
+                "INSERT INTO role_menus (roleId, menuId) VALUES (?, ?)",
                 "r-menu-admin",
                 "m-dashboard"
         );
         jdbcTemplate.update(
-                "INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES (?, ?, ?)",
-                "rm-menu-2",
+                "INSERT INTO role_menus (roleId, menuId) VALUES (?, ?)",
                 "r-menu-admin",
                 "m-analytics"
         );
@@ -142,11 +148,10 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
     void menuCodesReturnsCurrentUserAccessCodes() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, status, is_super, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-code-1",
-                "编辑员",
                 "editor",
                 0,
                 0,
@@ -154,43 +159,40 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_user (id, username, password, nick_name, status, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "u-code-1",
                 "code_user",
                 "encoded-password",
                 "权限用户",
-                0,
                 0
         );
         jdbcTemplate.update(
-                "INSERT INTO sys_user_role (id, user_id, role_id) VALUES (?, ?, ?)",
-                "ur-code-1",
+                "INSERT INTO user_roles (userId, roleId) VALUES (?, ?)",
                 "u-code-1",
                 "r-code-1"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_menu (id, parent_id, name, path, component, icon, type, auth_code, sort, status, hidden, deleted, created_at, updated_at)
+                INSERT INTO menus (id, parentId, name, title, path, component, icon, type, authCode, "order", status, hideInMenu, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "m-code-1",
                 null,
                 "SystemUserList",
+                "system.user.list",
                 "#",
                 null,
                 null,
-                2,
+                "BUTTON",
                 "system:user:list",
                 1,
                 0,
-                false,
-                0
+                false
         );
         jdbcTemplate.update(
-                "INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES (?, ?, ?)",
-                "rm-code-1",
+                "INSERT INTO role_menus (roleId, menuId) VALUES (?, ?)",
                 "r-code-1",
                 "m-code-1"
         );
@@ -215,6 +217,18 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void createPersistsUserThroughRealServiceAndMapper() throws Exception {
+        jdbcTemplate.update(
+                """
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "r-create-user",
+                "user",
+                0,
+                0,
+                0
+        );
+
         CreateUserDto dto = new CreateUserDto();
         dto.setUsername("integration_user");
         dto.setPassword("secret12");
@@ -226,10 +240,12 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.username").value("integration_user"));
+                .andExpect(jsonPath("$.data.username").value("integration_user"))
+                .andExpect(jsonPath("$.data.roles[0]").value("user"))
+                .andExpect(jsonPath("$.data.postIds").isArray());
 
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM sys_user WHERE username = ?",
+                "SELECT COUNT(*) FROM users WHERE username = ?",
                 Integer.class,
                 "integration_user"
         );
@@ -240,26 +256,133 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
     void listReturnsPagedUsersFromDatabase() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_user (id, username, password, nick_name, status, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "u-list-1",
                 "paged_user",
                 "encoded-password",
                 "分页用户",
-                0,
                 0
         );
 
         mockMvc.perform(get("/api/system/user/list").contextPath("/api")
                         .header("Authorization", bearerToken("u-admin", "admin", "admin"))
                         .param("page", "1")
-                        .param("size", "10"))
+                        .param("pageSize", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.total").value(1))
-                .andExpect(jsonPath("$.data.data[0].username").value("paged_user"))
-                .andExpect(jsonPath("$.data.page").value(1))
-                .andExpect(jsonPath("$.data.size").value(10));
+                .andExpect(jsonPath("$.data.list[0].username").value("paged_user"))
+                .andExpect(jsonPath("$.data.list[0].roles").isArray())
+                .andExpect(jsonPath("$.data.list[0].postIds").isArray());
+    }
+
+    @Test
+    void listSupportsPhoneAndPostFilters() throws Exception {
+        jdbcTemplate.update(
+                """
+                INSERT INTO users (id, username, password, nickName, phone, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "u-filter-1",
+                "filter_user",
+                "encoded-password",
+                "过滤用户",
+                "13800138000",
+                0
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO posts (id, postCode, postName, postSort, status, remark, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "p-filter-1",
+                "dev",
+                "开发岗位",
+                1,
+                0,
+                "开发"
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_posts (userId, postId) VALUES (?, ?)",
+                "u-filter-1",
+                "p-filter-1"
+        );
+
+        mockMvc.perform(get("/api/system/user/list").contextPath("/api")
+                        .header("Authorization", bearerToken("u-admin", "admin", "admin"))
+                        .param("phone", "13800138000")
+                        .param("postId", "p-filter-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].username").value("filter_user"));
+    }
+
+    @Test
+    void registerCreatesDefaultUserRole() throws Exception {
+        jdbcTemplate.update(
+                """
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "r-register-user",
+                "user",
+                0,
+                0,
+                0
+        );
+
+        mockMvc.perform(post("/api/user/register").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "register_user",
+                                  "password": "secret12",
+                                  "nickName": "注册用户"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.username").value("register_user"))
+                .andExpect(jsonPath("$.data.roles[0]").value("user"))
+                .andExpect(jsonPath("$.data.status").value(0));
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE username = ?",
+                Integer.class,
+                "register_user"
+        );
+        org.assertj.core.api.Assertions.assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    void changePasswordUsesCurrentUserAndValidatesOldPassword() throws Exception {
+        String encodedPassword = passwordEncoder.encode("old-pass");
+        jdbcTemplate.update(
+                """
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "u-change-password-1",
+                "change_user",
+                encodedPassword,
+                "改密用户",
+                0
+        );
+
+        mockMvc.perform(put("/api/user/change-password").contextPath("/api")
+                        .header("Authorization", bearerToken("u-change-password-1", "change_user", "user"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "oldPassword": "old-pass",
+                                  "newPassword": "new-pass"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.message").value("密码修改成功"));
     }
 }

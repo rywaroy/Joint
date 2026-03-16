@@ -9,6 +9,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,6 +36,9 @@ public abstract class BaseIntegrationTest {
     protected JdbcTemplate jdbcTemplate;
 
     @Autowired
+    protected PasswordEncoder passwordEncoder;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
@@ -47,8 +51,8 @@ public abstract class BaseIntegrationTest {
 
     @AfterEach
     void cleanUp() {
-        jdbcTemplate.update("DELETE FROM sys_oper_log");
-        jdbcTemplate.update("DELETE FROM sys_user");
+        jdbcTemplate.update("DELETE FROM oper_logs");
+        jdbcTemplate.update("DELETE FROM users");
     }
 
     protected String bearerToken(String userId, String username, String... roles) {

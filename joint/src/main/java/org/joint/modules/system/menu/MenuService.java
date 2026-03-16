@@ -37,7 +37,7 @@ public class MenuService {
         return getMenuTree(null, null, null, null);
     }
 
-    public List<MenuVo> getMenuTree(String name, String parentId, Integer status, Integer type) {
+    public List<MenuVo> getMenuTree(String name, String parentId, Integer status, String type) {
         List<MenuVo> menus = menuMapper.selectList(new LambdaQueryWrapper<Menu>()
                         .orderByAsc(Menu::getSort)
                         .orderByDesc(Menu::getCreatedAt))
@@ -72,6 +72,9 @@ public class MenuService {
 
         Menu menu = new Menu();
         BeanUtils.copyProperties(dto, menu);
+        if (!StringUtils.hasText(menu.getTitle())) {
+            menu.setTitle(menu.getName());
+        }
         if (menu.getSort() == null) {
             menu.setSort(0);
         }
@@ -105,6 +108,11 @@ public class MenuService {
         }
         if (dto.getName() != null) {
             menu.setName(dto.getName());
+        }
+        if (dto.getTitle() != null) {
+            menu.setTitle(dto.getTitle());
+        } else if (dto.getName() != null && !StringUtils.hasText(menu.getTitle())) {
+            menu.setTitle(dto.getName());
         }
         if (dto.getPath() != null) {
             menu.setPath(dto.getPath());
@@ -172,12 +180,12 @@ public class MenuService {
 
         Set<String> menuIds = roleMenus.stream().map(RoleMenu::getMenuId).collect(Collectors.toSet());
         List<MenuVo> menus = menuMapper.selectList(new LambdaQueryWrapper<Menu>()
-                        .in(Menu::getId, menuIds)
-                        .eq(Menu::getStatus, 0)
+                .in(Menu::getId, menuIds)
+                .eq(Menu::getStatus, 0)
                         .orderByAsc(Menu::getSort)
                         .orderByDesc(Menu::getCreatedAt))
                 .stream()
-                .filter(menu -> !Integer.valueOf(2).equals(menu.getType()))
+                .filter(menu -> !"BUTTON".equals(menu.getType()))
                 .map(this::toVo)
                 .sorted(menuComparator())
                 .toList();
@@ -234,8 +242,11 @@ public class MenuService {
                 .thenComparing(MenuVo::getCreatedAt, Comparator.nullsFirst(Comparator.naturalOrder()));
     }
 
-    private boolean matches(MenuVo menu, String name, String parentId, Integer status, Integer type) {
-        if (StringUtils.hasText(name) && !menu.getName().contains(name)) {
+    private boolean matches(MenuVo menu, String name, String parentId, Integer status, String type) {
+        boolean nameMatched = !StringUtils.hasText(name)
+                || menu.getName().contains(name)
+                || (StringUtils.hasText(menu.getTitle()) && menu.getTitle().contains(name));
+        if (!nameMatched) {
             return false;
         }
         if (StringUtils.hasText(parentId) && !parentId.equals(menu.getParentId())) {
@@ -284,7 +295,7 @@ public class MenuService {
 
     private Map<String, Object> buildRouteMeta(MenuVo menu) {
         Map<String, Object> meta = new LinkedHashMap<>();
-        meta.put("title", menu.getName());
+        meta.put("title", StringUtils.hasText(menu.getTitle()) ? menu.getTitle() : menu.getName());
         if (StringUtils.hasText(menu.getIcon())) {
             meta.put("icon", menu.getIcon());
         }

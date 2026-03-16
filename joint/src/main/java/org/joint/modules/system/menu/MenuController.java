@@ -44,7 +44,7 @@ public class MenuController {
     }
 
     @PostMapping
-    @RequirePermission("system:menu:add")
+    @RequirePermission("system:menu:create")
     @Log(module = "菜单管理", type = BusinessType.INSERT, description = "创建菜单")
     @Operation(summary = "创建菜单")
     public MenuVo create(@Valid @RequestBody CreateMenuDto dto) {
@@ -52,7 +52,7 @@ public class MenuController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("system:menu:edit")
+    @RequirePermission("system:menu:update")
     @Log(module = "菜单管理", type = BusinessType.UPDATE, description = "更新菜单")
     @Operation(summary = "更新菜单")
     public MenuVo update(@PathVariable String id, @Valid @RequestBody UpdateMenuDto dto) {

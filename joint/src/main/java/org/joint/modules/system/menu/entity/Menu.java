@@ -1,21 +1,28 @@
 package org.joint.modules.system.menu.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableName("sys_menu")
+@TableName("menus")
 public class Menu {
 
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
+    @TableField("parentId")
     private String parentId;
 
     private String name;
+
+    private String title;
 
     private String path;
 
@@ -23,23 +30,23 @@ public class Menu {
 
     private String icon;
 
-    private Integer type;
+    private String type;
 
+    @TableField("authCode")
     private String authCode;
 
+    @TableField("`order`")
     private Integer sort;
 
     private Integer status;
 
+    @TableField("hideInMenu")
     private Boolean hidden;
 
-    @TableLogic
-    private Integer deleted;
-
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(value = "createdAt", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "updatedAt", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     @TableField(exist = false)

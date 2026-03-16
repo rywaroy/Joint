@@ -119,9 +119,10 @@ class CurrentMenuControllerTest {
         child.setId("m-user");
         child.setParentId("m-system");
         child.setName("SystemUser");
+        child.setTitle("system.user.title");
         child.setPath("/system/user");
         child.setComponent("/system/user/list");
-        child.setType(1);
+        child.setType("MENU");
         child.setStatus(0);
         child.setAuthCode("system:user:list");
 
@@ -129,7 +130,8 @@ class CurrentMenuControllerTest {
         root.setId("m-system");
         root.setName("System");
         root.setPath("/system");
-        root.setType(0);
+        root.setTitle("system.title");
+        root.setType("CATALOG");
         root.setStatus(0);
         root.setChildren(List.of(child));
 
@@ -143,10 +145,10 @@ class CurrentMenuControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data[0].id").value("m-system"))
                 .andExpect(jsonPath("$.data[0].type").value("catalog"))
-                .andExpect(jsonPath("$.data[0].meta.title").value("System"))
+                .andExpect(jsonPath("$.data[0].meta.title").value("system.title"))
                 .andExpect(jsonPath("$.data[0].children[0].pid").value("m-system"))
                 .andExpect(jsonPath("$.data[0].children[0].type").value("menu"))
-                .andExpect(jsonPath("$.data[0].children[0].meta.title").value("SystemUser"));
+                .andExpect(jsonPath("$.data[0].children[0].meta.title").value("system.user.title"));
     }
 
     @Test
@@ -154,7 +156,8 @@ class CurrentMenuControllerTest {
         MenuVo root = new MenuVo();
         root.setId("m-system");
         root.setName("System");
-        root.setType(0);
+        root.setTitle("system.title");
+        root.setType("CATALOG");
         root.setStatus(0);
 
         when(menuService.getMenuTree()).thenReturn(List.of(root));
@@ -166,7 +169,7 @@ class CurrentMenuControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data[0].id").value("m-system"))
-                .andExpect(jsonPath("$.data[0].meta.title").value("System"));
+                .andExpect(jsonPath("$.data[0].meta.title").value("system.title"));
     }
 
     @Test
@@ -205,9 +208,10 @@ class CurrentMenuControllerTest {
         menu.setId("m-1");
         menu.setParentId("m-root");
         menu.setName("SystemMenu");
+        menu.setTitle("system.menu.title");
         menu.setPath("/system/menu");
         menu.setComponent("/system/menu/list");
-        menu.setType(1);
+        menu.setType("MENU");
         menu.setStatus(0);
         menu.setAuthCode("system:menu:list");
 
@@ -222,7 +226,7 @@ class CurrentMenuControllerTest {
                 .andExpect(jsonPath("$.data.id").value("m-1"))
                 .andExpect(jsonPath("$.data.pid").value("m-root"))
                 .andExpect(jsonPath("$.data.type").value("menu"))
-                .andExpect(jsonPath("$.data.meta.title").value("SystemMenu"));
+                .andExpect(jsonPath("$.data.meta.title").value("system.menu.title"));
     }
 
     @Test
@@ -231,18 +235,20 @@ class CurrentMenuControllerTest {
         created.setId("m-new");
         created.setParentId("m-root");
         created.setName("SystemMenu");
+        created.setTitle("system.menu.title");
         created.setPath("/system/menu");
         created.setComponent("/system/menu/list");
-        created.setType(1);
+        created.setType("MENU");
         created.setStatus(0);
         created.setAuthCode("system:menu:list");
 
         when(menuService.create(argThat(dto ->
                 "m-root".equals(dto.getParentId())
                         && "SystemMenu".equals(dto.getName())
+                        && "system.menu.title".equals(dto.getTitle())
                         && "/system/menu".equals(dto.getPath())
                         && "/system/menu/list".equals(dto.getComponent())
-                        && Integer.valueOf(1).equals(dto.getType())
+                        && "MENU".equals(dto.getType())
                         && "system:menu:list".equals(dto.getAuthCode())
                         && Integer.valueOf(3).equals(dto.getSort())
                         && Integer.valueOf(0).equals(dto.getStatus())
@@ -275,7 +281,7 @@ class CurrentMenuControllerTest {
                 .andExpect(jsonPath("$.data.id").value("m-new"))
                 .andExpect(jsonPath("$.data.pid").value("m-root"))
                 .andExpect(jsonPath("$.data.type").value("menu"))
-                .andExpect(jsonPath("$.data.meta.title").value("SystemMenu"));
+                .andExpect(jsonPath("$.data.meta.title").value("system.menu.title"));
     }
 
     @Test
@@ -284,18 +290,20 @@ class CurrentMenuControllerTest {
         updated.setId("m-1");
         updated.setParentId("m-root");
         updated.setName("SystemMenu");
+        updated.setTitle("system.menu.title");
         updated.setPath("/system/menu");
         updated.setComponent("/system/menu/list");
-        updated.setType(1);
+        updated.setType("MENU");
         updated.setStatus(0);
 
         when(menuService.update(eq("m-1"), argThat(dto ->
                 "m-root".equals(dto.getParentId())
                         && "SystemMenu".equals(dto.getName())
+                        && "system.menu.title".equals(dto.getTitle())
                         && "/system/menu".equals(dto.getPath())
                         && Integer.valueOf(4).equals(dto.getSort())
                         && Boolean.FALSE.equals(dto.getHidden())
-                        && Integer.valueOf(1).equals(dto.getType())
+                        && "MENU".equals(dto.getType())
         ))).thenReturn(updated);
 
         String token = jwtTokenProvider.generateToken("u-1", "admin", Map.of("roles", List.of("admin")));

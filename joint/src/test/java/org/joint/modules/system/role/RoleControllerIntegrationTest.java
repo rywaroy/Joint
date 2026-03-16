@@ -17,52 +17,49 @@ class RoleControllerIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void cleanRoleTables() {
-        jdbcTemplate.update("DELETE FROM sys_role_menu");
-        jdbcTemplate.update("DELETE FROM sys_user_role");
-        jdbcTemplate.update("DELETE FROM sys_role");
-        jdbcTemplate.update("DELETE FROM sys_menu");
+        jdbcTemplate.update("DELETE FROM role_menus");
+        jdbcTemplate.update("DELETE FROM user_roles");
+        jdbcTemplate.update("DELETE FROM roles");
+        jdbcTemplate.update("DELETE FROM menus");
     }
 
     @Test
     void listReturnsNexusRolePageShape() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, sort, status, is_super, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, remark, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-list-1",
                 "运营角色",
-                "ops",
-                1,
                 0,
                 0,
-                "角色备注",
-                0
+                0,
+                "角色备注"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_menu (id, parent_id, name, path, component, icon, type, auth_code, sort, status, hidden, deleted, created_at, updated_at)
+                INSERT INTO menus (id, parentId, name, title, path, component, icon, type, authCode, "order", status, hideInMenu, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "m-role-list",
                 null,
                 "角色列表",
+                "system.role.list",
                 "/system/role",
                 "/system/role/list",
                 null,
-                2,
+                "BUTTON",
                 "system:role:list",
                 1,
                 0,
-                0,
-                0
+                false
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role_menu (id, role_id, menu_id)
-                VALUES (?, ?, ?)
+                INSERT INTO role_menus (roleId, menuId)
+                VALUES (?, ?)
                 """,
-                "rm-role-list",
                 "r-list-1",
                 "m-role-list"
         );
@@ -117,42 +114,39 @@ class RoleControllerIntegrationTest extends BaseIntegrationTest {
     void optionsReturnsPermissionsForEnabledRoles() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, sort, status, is_super, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, remark, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-option-1",
                 "普通角色",
-                "normal",
-                1,
                 0,
                 0,
-                "启用角色",
-                0
+                0,
+                "启用角色"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_menu (id, parent_id, name, path, component, icon, type, auth_code, sort, status, hidden, deleted, created_at, updated_at)
+                INSERT INTO menus (id, parentId, name, title, path, component, icon, type, authCode, "order", status, hideInMenu, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "m-option-1",
                 null,
                 "角色查询",
+                "system.role.query",
                 "/system/role/query",
                 "/system/role/detail",
                 null,
-                2,
+                "BUTTON",
                 "system:role:query",
                 1,
                 0,
-                0,
-                0
+                false
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role_menu (id, role_id, menu_id)
-                VALUES (?, ?, ?)
+                INSERT INTO role_menus (roleId, menuId)
+                VALUES (?, ?)
                 """,
-                "rm-option-1",
                 "r-option-1",
                 "m-option-1"
         );
@@ -171,17 +165,15 @@ class RoleControllerIntegrationTest extends BaseIntegrationTest {
     void deleteReturnsDeletedIdPayload() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, sort, status, is_super, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, remark, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-delete-1",
                 "待删除角色",
-                "delete-me",
-                1,
                 0,
                 0,
-                "备注",
-                0
+                0,
+                "备注"
         );
 
         mockMvc.perform(delete("/api/system/role/r-delete-1").contextPath("/api")
@@ -195,17 +187,15 @@ class RoleControllerIntegrationTest extends BaseIntegrationTest {
     void updateRejectsDisablingAdminRole() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_role (id, name, code, sort, status, is_super, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, remark, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "r-admin-1",
                 "admin",
-                "admin",
-                1,
                 0,
                 1,
-                "内置管理员",
-                0
+                1,
+                "内置管理员"
         );
 
         mockMvc.perform(put("/api/system/role/r-admin-1").contextPath("/api")

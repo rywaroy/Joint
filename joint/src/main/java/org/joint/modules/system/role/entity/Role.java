@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableName("sys_role")
+@TableName("roles")
 public class Role {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -15,23 +15,23 @@ public class Role {
 
     private String name;
 
+    @TableField(exist = false)
     private String code;
-
-    private Integer sort;
 
     private Integer status;
 
+    @TableField("isBuiltin")
+    private Boolean isBuiltin;
+
+    @TableField("isSuper")
     private Boolean isSuper;
 
     private String remark;
 
-    @TableLogic
-    private Integer deleted;
-
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(value = "createdAt", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "updatedAt", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     @TableField(exist = false)

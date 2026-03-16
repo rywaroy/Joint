@@ -16,36 +16,34 @@ class DeptControllerIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void cleanDeptTable() {
-        jdbcTemplate.update("DELETE FROM sys_dept");
+        jdbcTemplate.update("DELETE FROM depts");
     }
 
     @Test
     void listReturnsNexusDeptTreeShape() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-root",
                 null,
                 "总部",
                 0,
-                0,
                 "根节点备注",
-                0
+                "d-root"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-child",
                 "d-root",
                 "研发部",
-                0,
                 1,
                 "子节点备注",
-                0
+                "d-root,d-child"
         );
 
         mockMvc.perform(get("/api/system/dept/list").contextPath("/api")
@@ -88,29 +86,27 @@ class DeptControllerIntegrationTest extends BaseIntegrationTest {
     void updateReturnsNexusDeptNodeShape() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-root",
                 null,
                 "总部",
                 0,
-                0,
                 "根节点备注",
-                0
+                "d-root"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-old",
                 null,
                 "旧部门",
                 0,
-                0,
                 "旧备注",
-                0
+                "d-old"
         );
 
         mockMvc.perform(put("/api/system/dept/d-old").contextPath("/api")
@@ -138,29 +134,27 @@ class DeptControllerIntegrationTest extends BaseIntegrationTest {
     void updateWithNullPidMovesDeptToRoot() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-root",
                 null,
                 "总部",
                 0,
-                0,
                 "根节点备注",
-                0
+                "d-root"
         );
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-child",
                 "d-root",
                 "研发部",
                 0,
-                0,
                 "子节点备注",
-                0
+                "d-root,d-child"
         );
 
         mockMvc.perform(put("/api/system/dept/d-child").contextPath("/api")
@@ -181,16 +175,15 @@ class DeptControllerIntegrationTest extends BaseIntegrationTest {
     void deleteReturnsDeletedIdPayload() throws Exception {
         jdbcTemplate.update(
                 """
-                INSERT INTO sys_dept (id, parent_id, name, sort, status, remark, deleted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO depts (id, pid, name, status, remark, treePath, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 "d-delete",
                 null,
                 "待删除部门",
                 0,
-                0,
                 "备注",
-                0
+                "d-delete"
         );
 
         mockMvc.perform(delete("/api/system/dept/d-delete").contextPath("/api")

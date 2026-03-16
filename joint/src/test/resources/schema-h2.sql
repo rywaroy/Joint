@@ -1,81 +1,49 @@
-CREATE TABLE IF NOT EXISTS sys_user (
-    id VARCHAR(32) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(36) PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    nick_name VARCHAR(50),
+    password VARCHAR(255) NOT NULL,
+    nickName VARCHAR(50),
     email VARCHAR(100),
     phone VARCHAR(20),
     avatar VARCHAR(255),
     status TINYINT DEFAULT 0,
-    dept_id VARCHAR(32),
+    deptId VARCHAR(36),
     remark VARCHAR(500),
-    deleted TINYINT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_sys_user_username UNIQUE (username),
-    CONSTRAINT uk_sys_user_email UNIQUE (email),
-    CONSTRAINT uk_sys_user_phone UNIQUE (phone)
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_users_username UNIQUE (username),
+    CONSTRAINT uk_users_email UNIQUE (email),
+    CONSTRAINT uk_users_phone UNIQUE (phone)
 );
 
-CREATE TABLE IF NOT EXISTS sys_role (
-    id VARCHAR(32) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS roles (
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    code VARCHAR(50) NOT NULL,
-    sort INT DEFAULT 0,
-    status TINYINT DEFAULT 0,
-    is_super TINYINT DEFAULT 0,
     remark VARCHAR(500),
-    deleted TINYINT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_sys_role_name UNIQUE (name),
-    CONSTRAINT uk_sys_role_code UNIQUE (code)
-);
-
-CREATE TABLE IF NOT EXISTS sys_menu (
-    id VARCHAR(32) PRIMARY KEY,
-    parent_id VARCHAR(32),
-    name VARCHAR(50) NOT NULL,
-    path VARCHAR(200),
-    component VARCHAR(200),
-    icon VARCHAR(100),
-    type TINYINT DEFAULT 1,
-    auth_code VARCHAR(100),
-    sort INT DEFAULT 0,
     status TINYINT DEFAULT 0,
-    hidden TINYINT DEFAULT 0,
-    deleted TINYINT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    isBuiltin BOOLEAN DEFAULT FALSE,
+    isSuper BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_roles_name UNIQUE (name)
 );
 
-CREATE TABLE IF NOT EXISTS sys_user_role (
-    id VARCHAR(32) PRIMARY KEY,
-    user_id VARCHAR(32) NOT NULL,
-    role_id VARCHAR(32) NOT NULL,
-    CONSTRAINT uk_sys_user_role UNIQUE (user_id, role_id)
+CREATE TABLE IF NOT EXISTS user_roles (
+    userId VARCHAR(36) NOT NULL,
+    roleId VARCHAR(36) NOT NULL,
+    assignedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_user_roles PRIMARY KEY (userId, roleId)
 );
 
-CREATE TABLE IF NOT EXISTS sys_role_menu (
-    id VARCHAR(32) PRIMARY KEY,
-    role_id VARCHAR(32) NOT NULL,
-    menu_id VARCHAR(32) NOT NULL,
-    CONSTRAINT uk_sys_role_menu UNIQUE (role_id, menu_id)
-);
-
-CREATE TABLE IF NOT EXISTS sys_dept (
-    id VARCHAR(32) PRIMARY KEY,
-    parent_id VARCHAR(32),
+CREATE TABLE IF NOT EXISTS depts (
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    sort INT DEFAULT 0,
-    leader VARCHAR(50),
-    phone VARCHAR(20),
-    email VARCHAR(100),
+    pid VARCHAR(36),
     status TINYINT DEFAULT 0,
     remark VARCHAR(500),
-    deleted TINYINT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    treePath VARCHAR(1000),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -95,6 +63,43 @@ CREATE TABLE IF NOT EXISTS user_posts (
     postId VARCHAR(36) NOT NULL,
     assignedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_user_posts PRIMARY KEY (userId, postId)
+);
+
+CREATE TABLE IF NOT EXISTS menus (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    parentId VARCHAR(36),
+    path VARCHAR(200),
+    component VARCHAR(200),
+    type VARCHAR(20) NOT NULL,
+    authCode VARCHAR(100),
+    "order" INT DEFAULT 0,
+    status TINYINT DEFAULT 0,
+    icon VARCHAR(100),
+    activeIcon VARCHAR(100),
+    keepAlive BOOLEAN DEFAULT FALSE,
+    affixTab BOOLEAN DEFAULT FALSE,
+    hideInMenu BOOLEAN DEFAULT FALSE,
+    hideChildrenInMenu BOOLEAN DEFAULT FALSE,
+    hideInBreadcrumb BOOLEAN DEFAULT FALSE,
+    hideInTab BOOLEAN DEFAULT FALSE,
+    iframeSrc VARCHAR(255),
+    link VARCHAR(255),
+    activePath VARCHAR(255),
+    badge VARCHAR(50),
+    badgeType VARCHAR(50),
+    badgeVariants VARCHAR(50),
+    treePath VARCHAR(1000),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS role_menus (
+    roleId VARCHAR(36) NOT NULL,
+    menuId VARCHAR(36) NOT NULL,
+    grantedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_role_menus PRIMARY KEY (roleId, menuId)
 );
 
 CREATE TABLE IF NOT EXISTS oper_logs (

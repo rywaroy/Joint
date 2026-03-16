@@ -17,7 +17,7 @@ class JointApplicationTests {
 
     @Test
     void contextLoads() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_user", Integer.class);
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
         assertThat(count).isZero();
     }
 

@@ -80,7 +80,7 @@ public class CurrentMenuController {
     }
 
     @PostMapping
-    @RequirePermission("system:menu:add")
+    @RequirePermission("system:menu:create")
     @Log(module = "菜单管理", type = BusinessType.INSERT, description = "创建菜单")
     @Operation(summary = "创建菜单")
     public MenuListVo create(@RequestBody MenuApiSaveDto dto) {
@@ -88,7 +88,7 @@ public class CurrentMenuController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("system:menu:edit")
+    @RequirePermission("system:menu:update")
     @Log(module = "菜单管理", type = BusinessType.UPDATE, description = "更新菜单")
     @Operation(summary = "更新菜单")
     public MenuListVo update(@PathVariable String id, @RequestBody MenuApiSaveDto dto) {
@@ -136,26 +136,25 @@ public class CurrentMenuController {
 
     private MenuListVo.Meta toMeta(MenuVo menu) {
         MenuListVo.Meta meta = new MenuListVo.Meta();
-        meta.setTitle(menu.getName());
+        meta.setTitle(StringUtils.hasText(menu.getTitle()) ? menu.getTitle() : menu.getName());
         meta.setIcon(menu.getIcon());
         meta.setOrder(menu.getSort());
         meta.setHideInMenu(menu.getHidden());
         return meta;
     }
 
-    private String toFrontendType(Integer type) {
-        return switch (type) {
-            case 0 -> "catalog";
-            case 1 -> "menu";
-            case 2 -> "button";
-            default -> throw new IllegalStateException("未知菜单类型: " + type);
-        };
+    private String toFrontendType(String type) {
+        if (!StringUtils.hasText(type)) {
+            return null;
+        }
+        return type.toLowerCase();
     }
 
     private CreateMenuDto toCreateDto(MenuApiSaveDto dto) {
         CreateMenuDto target = new CreateMenuDto();
         target.setParentId(resolveParentId(dto));
         target.setName(dto.getName());
+        target.setTitle(dto.getTitle());
         target.setPath(dto.getPath());
         target.setComponent(dto.getComponent());
         target.setIcon(dto.getIcon());
@@ -171,6 +170,7 @@ public class CurrentMenuController {
         UpdateMenuDto target = new UpdateMenuDto();
         target.setParentId(resolveParentId(dto));
         target.setName(dto.getName());
+        target.setTitle(dto.getTitle());
         target.setPath(dto.getPath());
         target.setComponent(dto.getComponent());
         target.setIcon(dto.getIcon());
@@ -204,15 +204,17 @@ public class CurrentMenuController {
                 && !StringUtils.hasText(query.getType());
     }
 
-    private Integer toBackendType(String type) {
+    private String toBackendType(String type) {
         if (!StringUtils.hasText(type)) {
             return null;
         }
         return switch (type) {
-            case "catalog" -> 0;
-            case "menu" -> 1;
-            case "button" -> 2;
-            default -> throw new BusinessException("当前后端仅支持 catalog、menu、button 类型菜单");
+            case "catalog" -> "CATALOG";
+            case "menu" -> "MENU";
+            case "button" -> "BUTTON";
+            case "embedded" -> "EMBEDDED";
+            case "link" -> "LINK";
+            default -> throw new BusinessException("当前后端仅支持 catalog、menu、button、embedded、link 类型菜单");
         };
     }
 }

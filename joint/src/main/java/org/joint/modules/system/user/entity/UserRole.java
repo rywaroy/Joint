@@ -1,18 +1,21 @@
 package org.joint.modules.system.user.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-@TableName("sys_user_role")
+@TableName("user_roles")
 public class UserRole {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    private String id;
-
+    @TableField("userId")
     private String userId;
 
+    @TableField("roleId")
     private String roleId;
+
+    @TableField("assignedAt")
+    private LocalDateTime assignedAt;
 }
