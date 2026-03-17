@@ -26,14 +26,16 @@ public class FileController {
     @PostMapping("/upload")
     @Log(module = "文件管理", type = BusinessType.IMPORT, description = "单文件上传")
     @Operation(summary = "单文件上传")
-    public FileInfo upload(@RequestParam("file") MultipartFile file) throws IOException {
-        return fileService.uploadFile(file);
+    public FileInfo upload(@RequestParam("file") MultipartFile file,
+                           @RequestParam("module") String module) throws IOException {
+        return fileService.uploadFile(file, module);
     }
 
     @PostMapping("/upload-files")
     @Log(module = "文件管理", type = BusinessType.IMPORT, description = "多文件上传")
     @Operation(summary = "多文件上传")
-    public List<FileInfo> uploadFiles(@RequestParam("files") MultipartFile[] files) throws IOException {
-        return fileService.uploadFiles(files);
+    public List<FileInfo> uploadFiles(@RequestParam("files") MultipartFile[] files,
+                                      @RequestParam("module") String module) throws IOException {
+        return fileService.uploadFiles(files, module);
     }
 }

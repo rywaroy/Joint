@@ -24,13 +24,13 @@ public class OssStorage implements StorageStrategy {
     }
 
     @Override
-    public FileInfo upload(MultipartFile file) throws IOException {
+    public FileInfo upload(MultipartFile file, String module) throws IOException {
         String dateDir = LocalDate.now().format(DATE_FORMATTER);
         String extension = getExtension(file.getOriginalFilename());
         String filename = extension.isEmpty()
                 ? UUID.randomUUID().toString()
                 : UUID.randomUUID() + "." + extension;
-        String key = ossProperties.getDir() + "/" + dateDir + "/" + filename;
+        String key = ossProperties.getDir() + "/" + module + "/" + dateDir + "/" + filename;
 
         getClient().putObject(ossProperties.getBucket(), key, file.getInputStream());
 

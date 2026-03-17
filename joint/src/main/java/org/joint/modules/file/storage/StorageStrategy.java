@@ -6,5 +6,5 @@ import java.io.IOException;
 
 public interface StorageStrategy {
 
-    FileInfo upload(MultipartFile file) throws IOException;
+    FileInfo upload(MultipartFile file, String module) throws IOException;
 }

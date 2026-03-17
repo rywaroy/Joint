@@ -23,10 +23,10 @@ public class LocalStorage implements StorageStrategy {
     }
 
     @Override
-    public FileInfo upload(MultipartFile file) throws IOException {
+    public FileInfo upload(MultipartFile file, String module) throws IOException {
         String dateDir = LocalDate.now().format(DATE_FORMATTER);
         Path root = Paths.get(fileStorageProperties.getUploadDir()).toAbsolutePath().normalize();
-        Path directory = root.resolve(dateDir);
+        Path directory = root.resolve(module).resolve(dateDir);
         Files.createDirectories(directory);
 
         String extension = getExtension(file.getOriginalFilename());
@@ -43,12 +43,12 @@ public class LocalStorage implements StorageStrategy {
         fileInfo.setSize(file.getSize());
         fileInfo.setPath(filePath.toString());
         fileInfo.setExtension(extension);
-        fileInfo.setUrl(buildUrl(dateDir, filename));
+        fileInfo.setUrl(buildUrl(module, dateDir, filename));
         return fileInfo;
     }
 
-    private String buildUrl(String dateDir, String filename) {
-        return fileStorageProperties.getBaseUrl() + "/uploads/" + dateDir + "/" + filename;
+    private String buildUrl(String module, String dateDir, String filename) {
+        return fileStorageProperties.getBaseUrl() + "/uploads/" + module + "/" + dateDir + "/" + filename;
     }
 
     private String getExtension(String filename) {

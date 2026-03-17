@@ -17,18 +17,18 @@ public class FileService {
 
     private final StorageStrategy storageStrategy;
 
-    public FileInfo uploadFile(MultipartFile file) throws IOException {
+    public FileInfo uploadFile(MultipartFile file, String module) throws IOException {
         if (file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
-        return storageStrategy.upload(file);
+        return storageStrategy.upload(file, module);
     }
 
-    public List<FileInfo> uploadFiles(MultipartFile[] files) throws IOException {
+    public List<FileInfo> uploadFiles(MultipartFile[] files, String module) throws IOException {
         List<FileInfo> results = new ArrayList<>();
         for (MultipartFile file : files) {
             if (!file.isEmpty()) {
-                results.add(storageStrategy.upload(file));
+                results.add(storageStrategy.upload(file, module));
             }
         }
         return results;
