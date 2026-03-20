@@ -30,4 +30,7 @@ public class QueryUserDto {
 
     @Schema(description = "岗位ID")
     private String postId;
+
+    @Schema(description = "角色ID")
+    private String roleId;
 }

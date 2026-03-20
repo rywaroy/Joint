@@ -225,6 +225,21 @@ public class UserService {
                 wrapper.in("id", userIds);
             }
         }
+
+        if (StringUtils.hasText(query.getRoleId())) {
+            List<String> userIds = userRoleMapper.selectList(
+                            new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, query.getRoleId()))
+                    .stream()
+                    .map(UserRole::getUserId)
+                    .distinct()
+                    .toList();
+            if (userIds.isEmpty()) {
+                wrapper.eq("id", "__no_match__");
+            } else {
+                wrapper.in("id", userIds);
+            }
+        }
+
         return wrapper;
     }
 
