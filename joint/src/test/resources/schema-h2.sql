@@ -65,6 +65,33 @@ CREATE TABLE IF NOT EXISTS user_posts (
     CONSTRAINT pk_user_posts PRIMARY KEY (userId, postId)
 );
 
+CREATE TABLE IF NOT EXISTS dict_types (
+    id VARCHAR(36) PRIMARY KEY,
+    dictName VARCHAR(100) NOT NULL,
+    dictType VARCHAR(100) NOT NULL,
+    status TINYINT DEFAULT 0,
+    remark VARCHAR(500),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_dict_types_dict_type UNIQUE (dictType)
+);
+
+CREATE TABLE IF NOT EXISTS dict_data (
+    id VARCHAR(36) PRIMARY KEY,
+    typeId VARCHAR(36) NOT NULL,
+    dictLabel VARCHAR(100) NOT NULL,
+    dictValue VARCHAR(100) NOT NULL,
+    dictSort INT DEFAULT 0,
+    cssClass VARCHAR(100),
+    listClass VARCHAR(100),
+    isDefault BOOLEAN DEFAULT FALSE,
+    status TINYINT DEFAULT 0,
+    remark VARCHAR(500),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_dict_data_type_label UNIQUE (typeId, dictLabel)
+);
+
 CREATE TABLE IF NOT EXISTS menus (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(50) NOT NULL,

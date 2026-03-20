@@ -24,10 +24,11 @@ class LocalStorageTest {
         LocalStorage localStorage = new LocalStorage(properties);
         MockMultipartFile file = new MockMultipartFile("file", "avatar.png", "image/png", "image".getBytes());
 
-        FileInfo result = localStorage.upload(file);
+        FileInfo result = localStorage.upload(file, "avatar");
 
         assertThat(result.getOriginalName()).isEqualTo("avatar.png");
-        assertThat(result.getUrl()).startsWith("http://localhost:8080/uploads/");
+        assertThat(result.getPath()).contains("avatar");
+        assertThat(result.getUrl()).startsWith("http://localhost:8080/uploads/avatar/");
         assertThat(Files.exists(Path.of(result.getPath()))).isTrue();
     }
 }

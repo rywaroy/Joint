@@ -126,6 +126,36 @@ CREATE TABLE IF NOT EXISTS user_posts (
     PRIMARY KEY (userId, postId)
 ) COMMENT '用户岗位关联表';
 
+CREATE TABLE IF NOT EXISTS dict_types (
+    id VARCHAR(36) PRIMARY KEY COMMENT '主键ID',
+    dictName VARCHAR(100) NOT NULL COMMENT '字典名称',
+    dictType VARCHAR(100) NOT NULL UNIQUE COMMENT '字典类型',
+    status TINYINT DEFAULT 0 COMMENT '状态 0-正常 1-停用',
+    remark VARCHAR(500) COMMENT '备注',
+    createdAt DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    updatedAt DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+    INDEX idx_dict_types_status (status)
+) COMMENT '字典类型表';
+
+CREATE TABLE IF NOT EXISTS dict_data (
+    id VARCHAR(36) PRIMARY KEY COMMENT '主键ID',
+    typeId VARCHAR(36) NOT NULL COMMENT '字典类型ID',
+    dictLabel VARCHAR(100) NOT NULL COMMENT '字典标签',
+    dictValue VARCHAR(100) NOT NULL COMMENT '字典键值',
+    dictSort INT DEFAULT 0 COMMENT '字典排序',
+    cssClass VARCHAR(100) COMMENT '样式属性',
+    listClass VARCHAR(100) COMMENT '表格回显样式',
+    isDefault TINYINT DEFAULT 0 COMMENT '是否默认 0-否 1-是',
+    status TINYINT DEFAULT 0 COMMENT '状态 0-正常 1-停用',
+    remark VARCHAR(500) COMMENT '备注',
+    createdAt DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    updatedAt DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+    UNIQUE KEY uk_dict_data_type_label (typeId, dictLabel),
+    INDEX idx_dict_data_type_id (typeId),
+    INDEX idx_dict_data_status (status),
+    INDEX idx_dict_data_sort (dictSort)
+) COMMENT '字典数据表';
+
 CREATE TABLE IF NOT EXISTS oper_logs (
     id VARCHAR(36) PRIMARY KEY COMMENT '主键ID',
     title VARCHAR(100) COMMENT '日志标题',
@@ -338,9 +368,57 @@ WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemPost')
   AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemPostDelete');
 
 INSERT INTO menus (id, name, title, parentId, path, component, type, authCode, `order`, status, icon)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDict', 'system.dict.title',
+       (SELECT id FROM menus WHERE name = 'System' LIMIT 1),
+       'dict', 'system/dict/list', 'MENU', NULL, 4, 0, 'mdi:book-open-page-variant-outline'
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'System')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict');
+
+INSERT INTO menus (id, name, title, parentId, path, type, authCode, `order`, status)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDictList', 'system.dict.list',
+       (SELECT id FROM menus WHERE name = 'SystemDict' LIMIT 1),
+       '#', 'BUTTON', 'system:dict:list', 1, 0
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDictList');
+
+INSERT INTO menus (id, name, title, parentId, path, type, authCode, `order`, status)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDictQuery', 'system.dict.query',
+       (SELECT id FROM menus WHERE name = 'SystemDict' LIMIT 1),
+       '#', 'BUTTON', 'system:dict:query', 2, 0
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDictQuery');
+
+INSERT INTO menus (id, name, title, parentId, path, type, authCode, `order`, status)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDictCreate', 'system.dict.create',
+       (SELECT id FROM menus WHERE name = 'SystemDict' LIMIT 1),
+       '#', 'BUTTON', 'system:dict:create', 3, 0
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDictCreate');
+
+INSERT INTO menus (id, name, title, parentId, path, type, authCode, `order`, status)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDictUpdate', 'system.dict.update',
+       (SELECT id FROM menus WHERE name = 'SystemDict' LIMIT 1),
+       '#', 'BUTTON', 'system:dict:update', 4, 0
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDictUpdate');
+
+INSERT INTO menus (id, name, title, parentId, path, type, authCode, `order`, status)
+SELECT REPLACE(UUID(), '-', ''), 'SystemDictDelete', 'system.dict.delete',
+       (SELECT id FROM menus WHERE name = 'SystemDict' LIMIT 1),
+       '#', 'BUTTON', 'system:dict:delete', 5, 0
+FROM DUAL
+WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDict')
+  AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemDictDelete');
+
+INSERT INTO menus (id, name, title, parentId, path, component, type, authCode, `order`, status, icon)
 SELECT REPLACE(UUID(), '-', ''), 'SystemRole', 'system.role.title',
        (SELECT id FROM menus WHERE name = 'System' LIMIT 1),
-       'role', 'system/role/list', 'MENU', NULL, 4, 0, 'mdi:account-group'
+       'role', 'system/role/list', 'MENU', NULL, 5, 0, 'mdi:account-group'
 FROM DUAL
 WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'System')
   AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemRole');
@@ -388,7 +466,7 @@ WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemRole')
 INSERT INTO menus (id, name, title, parentId, path, component, type, authCode, `order`, status, icon)
 SELECT REPLACE(UUID(), '-', ''), 'SystemUser', 'system.user.title',
        (SELECT id FROM menus WHERE name = 'System' LIMIT 1),
-       'user', 'system/user/list', 'MENU', NULL, 5, 0, 'mdi:account-outline'
+       'user', 'system/user/list', 'MENU', NULL, 6, 0, 'mdi:account-outline'
 FROM DUAL
 WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'System')
   AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemUser');
@@ -444,7 +522,7 @@ WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'SystemUser')
 INSERT INTO menus (id, name, title, parentId, path, component, type, authCode, `order`, status, icon)
 SELECT REPLACE(UUID(), '-', ''), 'SystemLog', 'system.log.title',
        (SELECT id FROM menus WHERE name = 'System' LIMIT 1),
-       'log', 'system/log/list', 'MENU', NULL, 6, 0, 'mdi:clipboard-text-clock-outline'
+       'log', 'system/log/list', 'MENU', NULL, 7, 0, 'mdi:clipboard-text-clock-outline'
 FROM DUAL
 WHERE EXISTS (SELECT 1 FROM menus WHERE name = 'System')
   AND NOT EXISTS (SELECT 1 FROM menus WHERE name = 'SystemLog');

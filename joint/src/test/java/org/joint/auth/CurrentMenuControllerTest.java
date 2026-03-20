@@ -10,6 +10,8 @@ import org.joint.config.JwtProperties;
 import org.joint.config.SecurityConfig;
 import org.joint.config.WebMvcConfig;
 import org.joint.modules.system.dept.mapper.DeptMapper;
+import org.joint.modules.system.dict.mapper.DictDataMapper;
+import org.joint.modules.system.dict.mapper.DictTypeMapper;
 import org.joint.modules.system.menu.CurrentMenuController;
 import org.joint.modules.system.menu.MenuService;
 import org.joint.modules.system.menu.mapper.MenuMapper;
@@ -106,6 +108,12 @@ class CurrentMenuControllerTest {
 
     @MockitoBean
     private DeptMapper deptMapper;
+
+    @MockitoBean
+    private DictTypeMapper dictTypeMapper;
+
+    @MockitoBean
+    private DictDataMapper dictDataMapper;
 
     @MockitoBean
     private PostMapper postMapper;

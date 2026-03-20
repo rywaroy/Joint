@@ -32,7 +32,7 @@ class FileServiceTest {
     void uploadFileRejectsEmptyFile() {
         MultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
 
-        assertThatThrownBy(() -> fileService.uploadFile(file))
+        assertThatThrownBy(() -> fileService.uploadFile(file, "avatar"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("文件不能为空");
     }
@@ -43,12 +43,12 @@ class FileServiceTest {
         FileInfo fileInfo = new FileInfo();
         fileInfo.setFilename("stored.png");
 
-        when(storageStrategy.upload(file)).thenReturn(fileInfo);
+        when(storageStrategy.upload(file, "avatar")).thenReturn(fileInfo);
 
-        FileInfo result = fileService.uploadFile(file);
+        FileInfo result = fileService.uploadFile(file, "avatar");
 
         assertThat(result.getFilename()).isEqualTo("stored.png");
-        verify(storageStrategy).upload(file);
+        verify(storageStrategy).upload(file, "avatar");
     }
 
     @Test
@@ -61,13 +61,16 @@ class FileServiceTest {
         FileInfo secondInfo = new FileInfo();
         secondInfo.setFilename("b.txt");
 
-        when(storageStrategy.upload(firstFile)).thenReturn(firstInfo);
-        when(storageStrategy.upload(secondFile)).thenReturn(secondInfo);
+        when(storageStrategy.upload(firstFile, "document")).thenReturn(firstInfo);
+        when(storageStrategy.upload(secondFile, "document")).thenReturn(secondInfo);
 
-        List<FileInfo> result = fileService.uploadFiles(new MultipartFile[]{emptyFile, firstFile, secondFile});
+        List<FileInfo> result = fileService.uploadFiles(
+                new MultipartFile[]{emptyFile, firstFile, secondFile},
+                "document"
+        );
 
         assertThat(result).extracting(FileInfo::getFilename).containsExactly("a.txt", "b.txt");
-        verify(storageStrategy).upload(firstFile);
-        verify(storageStrategy).upload(secondFile);
+        verify(storageStrategy).upload(firstFile, "document");
+        verify(storageStrategy).upload(secondFile, "document");
     }
 }

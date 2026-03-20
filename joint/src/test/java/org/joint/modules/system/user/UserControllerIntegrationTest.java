@@ -321,6 +321,73 @@ class UserControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void listSupportsRoleFilter() throws Exception {
+        jdbcTemplate.update(
+                """
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "r-role-filter-admin",
+                "admin",
+                0,
+                0,
+                1
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO roles (id, name, status, isBuiltin, isSuper, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "r-role-filter-editor",
+                "editor",
+                0,
+                0,
+                0
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "u-role-filter-1",
+                "admin_user",
+                "encoded-password",
+                "管理员用户",
+                0
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO users (id, username, password, nickName, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                "u-role-filter-2",
+                "editor_user",
+                "encoded-password",
+                "编辑用户",
+                0
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (userId, roleId) VALUES (?, ?)",
+                "u-role-filter-1",
+                "r-role-filter-admin"
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (userId, roleId) VALUES (?, ?)",
+                "u-role-filter-2",
+                "r-role-filter-editor"
+        );
+
+        mockMvc.perform(get("/api/system/user/list").contextPath("/api")
+                        .header("Authorization", bearerToken("u-admin", "admin", "admin"))
+                        .param("roleId", "r-role-filter-editor"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].username").value("editor_user"))
+                .andExpect(jsonPath("$.data.list[0].roles[0]").value("editor"));
+    }
+
+    @Test
     void registerCreatesDefaultUserRole() throws Exception {
         jdbcTemplate.update(
                 """
